@@ -15,8 +15,27 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+set(CMAKE_BUILD_TYPE Debug)
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(tf2_eigen REQUIRED)
+find_package(rviz_visual_tools REQUIRED)
+
+install(DIRECTORY
+  DESTINATION share/${PROJECT_NAME}/
+)
+include_directories(include)
+add_compile_options(-g)
+
+add_executable(rviz_vr_visual src/rviz_vr_visual.cpp)
+ament_target_dependencies(rviz_vr_visual
+  rclcpp
+  tf2_eigen
+  rviz_visual_tools
+  geometry_msgs
+)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -32,4 +51,11 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+install(TARGETS rviz_vr_visual
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY include
+  DESTINATION include/${PROJECT_NAME}/)
+    
 ament_package()

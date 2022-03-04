@@ -4,10 +4,11 @@
   <name>vr_controller</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="2330834a@student.gla.ac.uk">ubb</maintainer>
+  <maintainer email="2330834a@student.gla.ac.uk">Florent Audonnet</maintainer>
   <license>TODO: License declaration</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>rviz_visual_tool</buildtool_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

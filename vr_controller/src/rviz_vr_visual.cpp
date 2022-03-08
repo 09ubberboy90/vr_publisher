@@ -72,8 +72,7 @@ private:
                                msg->orientation.z,
                                msg->orientation.x,
                                msg->orientation.y));
-        RCLCPP_INFO(rclcpp::get_logger("vr_controller"), "Received data from %s ", name.c_str());
-
+        
         // Publish arrow vector of pose
         visual_tools_->resetMarkerCounts();
         // visual_tools_->deleteMarker(name);
@@ -92,7 +91,6 @@ private:
     }
 
     rviz_visual_tools::RvizVisualToolsPtr visual_tools_;
-
     rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subscription_hmd;
     rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subscription_left;
     rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subscription_right;

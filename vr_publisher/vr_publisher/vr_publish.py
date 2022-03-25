@@ -126,10 +126,10 @@ class VrPublisher(Node):
         self.poses = []
         self.publishers_dict = {}
         self.prev_time = datetime.now()
-        self.point = None
+        self.point = {}
         self.velocity = Vector3()
         self.ang_velocity = Vector3()
-        self.rot = None
+        self.rot = {}
         self.buttons = buttons
         self.raw = raw
         self.hmd_pose = Pose()
@@ -189,11 +189,13 @@ class VrPublisher(Node):
 
                 time = datetime.now()
                 dtime = (time-self.prev_time).total_seconds()
-                if self.point is not None:
-                    self.velocity.x = (point.x - self.point.x) / dtime
-                    self.velocity.y = (point.y - self.point.y) / dtime
-                    self.velocity.z = (point.z - self.point.z) / dtime
-                self.point = point
+                self.prev_time = time
+
+                if self.point.get(name, None) is not None:
+                    self.velocity.x = point.x - self.point[name].x / dtime
+                    self.velocity.y = point.y - self.point[name].y / dtime
+                    self.velocity.z = point.z - self.point[name].z / dtime
+                self.point[name] = point
 
                 rot = Quaternion()
 
@@ -206,15 +208,15 @@ class VrPublisher(Node):
                 rot.z = pose[1][3] - self.hmd_pose.orientation.z
 
 
-                if self.rot is not None:
-                    diffQuater = q1 - self.rot
+                if self.rot.get(name, None) is not None:
+                    diffQuater = q1 - self.rot[name]
                     conjBoxQuater = q1.inverse
                     velQuater = ((diffQuater * 2.0) / dtime) * conjBoxQuater
                     self.ang_velocity.x = velQuater[1]
                     self.ang_velocity.y = velQuater[2]
                     self.ang_velocity.z = velQuater[3]
                     # print(self.ang_velocity)
-                self.rot = q1
+                self.rot[name] = q1
 
                 msg = Pose()
                 msg.orientation = rot

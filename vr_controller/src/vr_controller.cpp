@@ -65,7 +65,7 @@ public:
         : Node("vr_subscriber")
     {
         subscription_ = this->create_subscription<geometry_msgs::msg::Twist>(
-            "/controller/RightHand", 10, std::bind(&VrSubscriber::execute_goal, this, std::placeholders::_1));
+            "/controller/RightHand/vel", 10, std::bind(&VrSubscriber::execute_goal, this, std::placeholders::_1));
     }
     geometry_msgs::msg::Twist::SharedPtr twist;
 private:
@@ -80,9 +80,16 @@ void publishCommands(std::shared_ptr<VrSubscriber> vr_subscriber)
 {
     auto msg = std::make_unique<geometry_msgs::msg::TwistStamped>();
     msg->header.stamp = node_->now();
-    msg->header.frame_id = "panda_hand";
-    msg->twist.linear = vr_subscriber->twist->linear;
-    twist_cmd_pub_->publish(std::move(msg));
+    msg->header.frame_id = "panda_link0";
+    if (vr_subscriber->twist)
+    {
+        msg->twist.linear = vr_subscriber->twist->linear;
+        twist_cmd_pub_->publish(std::move(msg));
+    }
+    else{
+        RCLCPP_INFO(LOGGER, "Twist is not defined");
+    }
+    
 }
 
 

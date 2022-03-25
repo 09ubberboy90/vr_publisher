@@ -104,8 +104,8 @@ def generate_launch_description():
     )
 
     pose_tracking_node = Node(
-        package="moveit_servo",
-        executable="servo_pose_tracking_demo",
+        package="vr_controller",
+        executable="vr_controller",
         # prefix=['xterm -e gdb -ex run --args'],
         output="screen",
         parameters=[

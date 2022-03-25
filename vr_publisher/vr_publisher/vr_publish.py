@@ -133,8 +133,8 @@ class VrPublisher(Node):
         self.buttons = buttons
         self.raw = raw
         self.hmd_pose = Pose()
-        self.hmd_pose.position = Point()
-        self.hmd_pose.orientation = Quaternion()
+        # self.hmd_pose.position = Point()
+        # self.hmd_pose.orientation = Quaternion()
 
     def timer_callback(self):
         self.poses = self.system.getDeviceToAbsoluteTrackingPose(
@@ -182,19 +182,23 @@ class VrPublisher(Node):
 
                 pose = convert_to_quaternion(
                     el.mDeviceToAbsoluteTracking)
+                orig_point = Point()
                 point = Point()
+                orig_point.x = pose[0][0]
+                orig_point.y = pose[0][1]
+                orig_point.z = pose[0][2]
+
                 point.x = pose[0][0] - self.hmd_pose.position.x
                 point.y = pose[0][1] - self.hmd_pose.position.y
                 point.z = pose[0][2] - self.hmd_pose.position.z
-
                 time = datetime.now()
                 dtime = (time-self.prev_time).total_seconds()
                 self.prev_time = time
 
                 if self.point.get(name, None) is not None:
-                    self.velocity.x = point.x - self.point[name].x / dtime
-                    self.velocity.y = point.y - self.point[name].y / dtime
-                    self.velocity.z = point.z - self.point[name].z / dtime
+                    self.velocity.x = round(point.x - self.point[name].x,4) / dtime
+                    self.velocity.y = round(point.y - self.point[name].y,4) / dtime
+                    self.velocity.z = round(point.z - self.point[name].z,4) / dtime
                 self.point[name] = point
 
                 rot = Quaternion()
@@ -202,11 +206,16 @@ class VrPublisher(Node):
                 q1 = pyq.Quaternion(pose[1])
                 q1 = q1.normalised
 
-                rot.w = pose[1][0] - self.hmd_pose.orientation.w
-                rot.x = pose[1][1] - self.hmd_pose.orientation.x
-                rot.y = pose[1][2] - self.hmd_pose.orientation.y
-                rot.z = pose[1][3] - self.hmd_pose.orientation.z
-
+                rot.w = pose[1][0]
+                rot.x = pose[1][1]
+                rot.y = pose[1][2]
+                rot.z = pose[1][3]
+                
+                hmd_msg = Pose()
+                if name == "hmd":
+                    hmd_msg.orientation = rot
+                    hmd_msg.position = orig_point
+                    self.hmd_pose = hmd_msg
 
                 if self.rot.get(name, None) is not None:
                     diffQuater = q1 - self.rot[name]
@@ -221,10 +230,8 @@ class VrPublisher(Node):
                 msg = Pose()
                 msg.orientation = rot
                 msg.position = point
+
                 name = f"{key}/{name}"
-                
-                if name == "hmd" and not self.raw:
-                    self.hmd_pose = msg
 
                 self.publish(name, msg, Pose)
 

@@ -22,6 +22,8 @@ find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2_eigen REQUIRED)
 find_package(rviz_visual_tools REQUIRED)
+find_package(moveit_servo REQUIRED)
+find_package(backward_ros REQUIRED)
 
 install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}/
@@ -34,6 +36,20 @@ ament_target_dependencies(rviz_vr_visual
   rclcpp
   tf2_eigen
   rviz_visual_tools
+  geometry_msgs
+)
+
+add_executable(pose_tracking src/pose_tracking.cpp)
+ament_target_dependencies(pose_tracking
+  rclcpp
+  moveit_servo
+  geometry_msgs
+)
+
+add_executable(vr_controller src/vr_controller.cpp)
+ament_target_dependencies(vr_controller
+  rclcpp
+  moveit_servo
   geometry_msgs
 )
 # uncomment the following section in order to fill in
@@ -51,7 +67,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-install(TARGETS rviz_vr_visual
+install(TARGETS rviz_vr_visual vr_controller pose_tracking
   DESTINATION lib/${PROJECT_NAME}
 )
 

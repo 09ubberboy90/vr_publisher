@@ -44,7 +44,7 @@ public:
     MinimalSubscriber()
         : Node("minimal_subscriber")
     {
-        visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("base_frame", "/rviz_visual_markers", this));
+        visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("world", "/rviz_visual_markers", this));
         visual_tools_->deleteAllMarkers();
 
         std::function<void(const std::shared_ptr<geometry_msgs::msg::Pose>)>

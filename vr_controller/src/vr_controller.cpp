@@ -80,7 +80,7 @@ void publishCommands(std::shared_ptr<VrSubscriber> vr_subscriber)
 {
     auto msg = std::make_unique<geometry_msgs::msg::TwistStamped>();
     msg->header.stamp = node_->now();
-    msg->header.frame_id = "panda_link0";
+    msg->header.frame_id = "base_link";
     if (vr_subscriber->twist)
     {
         msg->twist.linear = vr_subscriber->twist->linear;
@@ -141,9 +141,11 @@ int main(int argc, char **argv)
         RCLCPP_FATAL(LOGGER, "Failed to load the servo parameters");
         return EXIT_FAILURE;
     }
+    rclcpp::NodeOptions options;
 
     // Initialize the Servo C++ interface by passing a pointer to the node, the parameters, and the PSM
     auto servo = std::make_unique<moveit_servo::Servo>(node_, servo_parameters, planning_scene_monitor);
+    auto servo_node = std::make_shared<moveit_servo::ServoNode>(options);
 
     // You can start Servo directly using the C++ interface. If launched using the alternative ServoNode, a ROS
     // service is used to start Servo. Before it is started, MoveIt Servo will not accept any commands or move the robot

@@ -3,7 +3,7 @@ import yaml
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
-
+import xacro
 
 def load_file(package_name, file_path):
     package_path = get_package_share_directory(package_name)
@@ -29,24 +29,29 @@ def load_yaml(package_name, file_path):
 
 def generate_launch_description():
     # planning_context
-    robot_description_config = load_file("vr_panda", 
+    robot_description_config = load_file("ur_description", 
         os.path.join(
             "urdf",
-            "panda.urdf",
+            "ur.urdf",
         )
-    )
+)
     robot_description = {"robot_description": robot_description_config}
 
     robot_description_semantic_config = load_file(
-        "vr_panda", "config/panda.srdf"
+        "ur_moveit_config", "srdf/ur.srdf"
     )
     robot_description_semantic = {
         "robot_description_semantic": robot_description_semantic_config
     }
 
     kinematics_yaml = load_yaml(
-        "moveit_resources_panda_moveit_config", "config/kinematics.yaml"
+        "ur_description", "config/ur3/default_kinematics.yaml"
     )
+    servo_yaml = load_yaml(
+        "vr_panda", "config/ur_simulated.yaml"
+    )
+    servo_params = {"moveit_servo": servo_yaml}
+
     # MoveGroupInterface demo executable
     moveit_controller = Node(name='moveit_controller',
                                package='vr_controller',
@@ -54,7 +59,7 @@ def generate_launch_description():
                                output='screen',
                                parameters=[robot_description,
                                            robot_description_semantic,
-                                           kinematics_yaml,
+                                           servo_params,
                                            ],
                             #   prefix=['gdbserver localhost:3000']
                             )

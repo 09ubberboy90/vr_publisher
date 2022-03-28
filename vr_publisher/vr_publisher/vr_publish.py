@@ -196,9 +196,9 @@ class VrPublisher(Node):
                 self.prev_time = time
 
                 if self.point.get(name, None) is not None:
-                    self.velocity.x = round(point.x - self.point[name].x,4) / dtime
-                    self.velocity.y = round(point.y - self.point[name].y,4) / dtime
-                    self.velocity.z = round(point.z - self.point[name].z,4) / dtime
+                    self.velocity.x = round(point.x - self.point[name].x,3) / dtime
+                    self.velocity.y = round(point.y - self.point[name].y,3) / dtime
+                    self.velocity.z = round(point.z - self.point[name].z,3) / dtime
                 self.point[name] = point
 
                 rot = Quaternion()

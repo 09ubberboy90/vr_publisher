@@ -32,20 +32,20 @@ def generate_launch_description():
     robot_description_config = load_file("ur_description", 
         os.path.join(
             "urdf",
-            "ur.urdf",
+            "ur10.urdf",
         )
 )
     robot_description = {"robot_description": robot_description_config}
 
     robot_description_semantic_config = load_file(
-        "ur_moveit_config", "srdf/ur.srdf"
+        "ur_moveit_config", "srdf/ur10.srdf"
     )
     robot_description_semantic = {
         "robot_description_semantic": robot_description_semantic_config
     }
 
     kinematics_yaml = load_yaml(
-        "ur_description", "config/ur3/default_kinematics.yaml"
+        "ur_description", "config/ur10/default_kinematics.yaml"
     )
     servo_yaml = load_yaml(
         "vr_panda", "config/ur_simulated.yaml"

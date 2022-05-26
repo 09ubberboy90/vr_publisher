@@ -56,7 +56,6 @@ rclcpp::Node::SharedPtr node_;
 rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_cmd_pub_;
 size_t count_ = 0;
 
-static const rclcpp::Logger LOGGER = rclcpp::get_logger("vr_controller");
 
 class VrSubscriber : public rclcpp::Node
 {
@@ -80,14 +79,14 @@ void publishCommands(std::shared_ptr<VrSubscriber> vr_subscriber)
 {
     auto msg = std::make_unique<geometry_msgs::msg::TwistStamped>();
     msg->header.stamp = node_->now();
-    msg->header.frame_id = "base_link";
+    // msg->header.frame_id = "base_link";
     if (vr_subscriber->twist)
     {
-        msg->twist.linear = vr_subscriber->twist->linear;
+        msg->twist = *vr_subscriber->twist;
         twist_cmd_pub_->publish(std::move(msg));
     }
     else{
-        RCLCPP_INFO(LOGGER, "Twist is not defined");
+        RCLCPP_INFO(rclcpp::get_logger("moveit_servo.pose_tracking_demo"), "Twist is not defined");
     }
     
 }
@@ -99,16 +98,15 @@ int main(int argc, char **argv)
     rclcpp::NodeOptions node_options;
 
     // This is false for now until we fix the QoS settings in moveit to enable intra process comms
-    node_options.use_intra_process_comms(true);
+    node_options.use_intra_process_comms(false);
     node_ = std::make_shared<rclcpp::Node>("servo_demo_node", node_options);
     // Pause for RViz to come up. This is necessary in an integrated demo with a single launch file
-    rclcpp::sleep_for(std::chrono::seconds(4));
+    // rclcpp::sleep_for(std::chrono::seconds(4));
 
-    // Create the planning_scene_monitor. We need to pass this to Servo's constructor, and we should set it up first
-    // before initializing any collision objects
-    auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+    // // Create the planning_scene_monitor. We need to pass this to Servo's constructor, and we should set it up first
+    // // before initializing any collision objects
     auto planning_scene_monitor = std::make_shared<planning_scene_monitor::PlanningSceneMonitor>(
-        node_, "robot_description", tf_buffer, "planning_scene_monitor");
+        node_, "robot_description", "planning_scene_monitor");
 
     // Here we make sure the planning_scene_monitor is updating in real time from the joint states topic
     if (planning_scene_monitor->getPlanningScene())
@@ -116,34 +114,32 @@ int main(int argc, char **argv)
         planning_scene_monitor->startStateMonitor("/joint_states");
         planning_scene_monitor->setPlanningScenePublishingFrequency(25);
         planning_scene_monitor->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE,
-                                                            "/moveit_servo/publish_planning_scene");
+                                                                "/moveit_servo/publish_planning_scene");
         planning_scene_monitor->startSceneMonitor();
         planning_scene_monitor->providePlanningSceneService();
     }
     else
     {
-        RCLCPP_ERROR(LOGGER, "Planning scene not configured");
+        RCLCPP_ERROR(rclcpp::get_logger("moveit_servo.pose_tracking_demo"), "Planning scene not configured");
         return EXIT_FAILURE;
     }
-
-    // These are the publishers that will send commands to MoveIt Servo. Two command types are supported: JointJog
+      // These are the publishers that will send commands to MoveIt Servo. Two command types are supported: JointJog
     // messages which will directly jog the robot in the joint space, and TwistStamped messages which will move the
     // specified link with the commanded Cartesian velocity. In this demo, we jog the end effector link.
     // twist_cmd_pub_ = node_->create_publisher<geometry_msgs::msg::TwistStamped>("servo_demo_node/delta_twist_cmds", 10);
-    twist_cmd_pub_ = node_->create_publisher<geometry_msgs::msg::TwistStamped>("moveit_controller/delta_twist_cmds", 10);
+    twist_cmd_pub_ = node_->create_publisher<geometry_msgs::msg::TwistStamped>("/servo_node/delta_twist_cmds", 10);
 
 
     // Initializing Servo
     // ^^^^^^^^^^^^^^^^^^
     // Servo requires a number of parameters to dictate its behavior. These can be read automatically by using the
     // :code:`makeServoParameters` helper function
-    auto servo_parameters = moveit_servo::ServoParameters::makeServoParameters(node_, LOGGER);
+    auto servo_parameters = moveit_servo::ServoParameters::makeServoParameters(node_);
     if (!servo_parameters)
     {
-        RCLCPP_FATAL(LOGGER, "Failed to load the servo parameters");
+        RCLCPP_FATAL(rclcpp::get_logger("moveit_servo.pose_tracking_demo"), "Failed to load the servo parameters");
         return EXIT_FAILURE;
     }
-    rclcpp::NodeOptions options;
 
     // Initialize the Servo C++ interface by passing a pointer to the node, the parameters, and the PSM
     auto servo = std::make_unique<moveit_servo::Servo>(node_, servo_parameters, planning_scene_monitor);

@@ -53,7 +53,7 @@ def generate_launch_description():
     servo_params = {"moveit_servo": servo_yaml}
 
     # MoveGroupInterface demo executable
-    moveit_controller = Node(name='moveit_controller',
+    moveit_controller = Node(name='servo_node',
                                package='vr_controller',
                                executable='vr_controller',
                                output='screen',

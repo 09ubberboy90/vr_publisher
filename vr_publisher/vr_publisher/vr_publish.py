@@ -34,9 +34,10 @@ import openvr
 import pyquaternion as pyq
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Pose, Point, Quaternion, Twist, Vector3
+from geometry_msgs.msg import Pose, Point, Quaternion, Twist, TwistStamped, Vector3
 from std_msgs.msg import Bool
 from collections import defaultdict
+import numpy as np
 
 # https: // gist.github.com/awesomebytes/75daab3adb62b331f21ecf3a03b3ab46
 import math
@@ -115,9 +116,10 @@ def from_controller_state_to_dict(pControllerState):
     return d
 
 
+
 class VrPublisher(Node):
 
-    def __init__(self, openvr_system, buttons=False, raw=False):
+    def __init__(self, openvr_system):
         super().__init__('vr_publisher')
         timer_period = 0.1
         self.timer = self.create_timer(timer_period, self.timer_callback)
@@ -127,14 +129,83 @@ class VrPublisher(Node):
         self.publishers_dict = {}
         self.prev_time = datetime.now()
         self.point = {}
-        self.velocity = Vector3()
-        self.ang_velocity = Vector3()
         self.rot = {}
-        self.buttons = buttons
-        self.raw = raw
+        self.vel = defaultdict(lambda: np.zeros((5,3)))
+        self.ang_vel = defaultdict(lambda: np.zeros((5,3)))
         self.hmd_pose = Pose()
         # self.hmd_pose.position = Point()
         # self.hmd_pose.orientation = Quaternion()
+
+
+    def extract_pose(self, tracked_device, name):
+        point = Point()
+        velocity = Vector3()
+        ang_velocity = Vector3()
+        pose = convert_to_quaternion(tracked_device.mDeviceToAbsoluteTracking)
+        orig_point = Point()
+        orig_point.x = pose[0][0]
+        orig_point.y = pose[0][1]
+        orig_point.z = pose[0][2]
+
+        point.x = pose[0][0] - self.hmd_pose.position.x
+        point.y = pose[0][1] - self.hmd_pose.position.y
+        point.z = pose[0][2] - self.hmd_pose.position.z
+
+        # if self.point.get(name, None) is not None:
+        self.vel[name] = np.roll(self.vel[name],1,axis=0)
+        self.vel[name][-1] = [round(num,2) for num in tracked_device.vVelocity[0:3]]
+        self.ang_vel[name] = np.roll(self.ang_vel[name],1,axis=0)
+        self.ang_vel[name][-1] = [round(num,2) for num in tracked_device.vAngularVelocity[0:3]]
+        mean = np.mean(self.vel[name],0)
+        ang_mean = np.mean(self.ang_vel[name],0)
+        # velocity.x = round(mean[2],2)+0.0
+        # velocity.y = round(mean[1],2)+0.0
+        # velocity.z = round(mean[0],2)+0.0
+        velocity.x = mean[2] + 0.0
+        velocity.y = mean[1] + 0.0
+        velocity.z = mean[1] + 0.0
+        ang_velocity.x = ang_mean[2] + 0.0
+        ang_velocity.y = ang_mean[1] + 0.0
+        ang_velocity.z = ang_mean[0] + 0.0
+        # self.point[name] = point
+
+        rot = Quaternion()
+
+        q1 = pyq.Quaternion(pose[1])
+        q1 = q1.normalised
+
+        rot.w = pose[1][0]
+        rot.x = pose[1][1]
+        rot.y = pose[1][2]
+        rot.z = pose[1][3]
+
+        hmd_msg = Pose()
+        if name == "hmd":
+            hmd_msg.orientation = rot
+            hmd_msg.position = orig_point
+            self.hmd_pose = hmd_msg
+
+        # if self.rot.get(name, None) is not None:
+        #     diffQuater = q1 - self.rot[name]
+        #     conjBoxQuater = q1.inverse
+        #     time = datetime.now()
+        #     self.prev_time = time
+        #     dtime = (time-self.prev_time).total_seconds()
+        #     velQuater = ((diffQuater * 2.0) / dtime) * conjBoxQuater
+        #     self.ang_velocity.x = velQuater[1]
+        #     self.ang_velocity.y = velQuater[2]
+        #     self.ang_velocity.z = velQuater[3]
+
+        self.rot[name] = q1
+        pose_msg = Pose()
+        pose_msg.orientation = rot
+        pose_msg.position = point
+
+        vel_msg = Twist()
+        vel_msg.linear = velocity
+        vel_msg.angular = ang_velocity
+
+        return pose_msg, vel_msg
 
     def timer_callback(self):
         self.poses = self.system.getDeviceToAbsoluteTrackingPose(
@@ -168,6 +239,9 @@ class VrPublisher(Node):
                 if controller_role == 2:
                     hand = "RightHand"
                 self.devices["controller"].append((hand, controller))
+            elif self.system.getTrackedDeviceClass(idx) == 3 and len(self.devices["tracker"]) < 2:
+                self.devices["tracker"].append((f"Tracker{idx}", controller))
+
         for key, device in self.devices.items():
             for idx, (name, el) in enumerate(device):
                 if key == "controller":
@@ -179,71 +253,25 @@ class VrPublisher(Node):
                         msg = Bool()
                         msg.data = d["trigger"] > 0.0
                         self.publish(tmp_name, msg, Bool)
+        
+        
+                pose_msg, vel_msg = self.extract_pose(el, name)
 
-                pose = convert_to_quaternion(
-                    el.mDeviceToAbsoluteTracking)
-                orig_point = Point()
-                point = Point()
-                orig_point.x = pose[0][0]
-                orig_point.y = pose[0][1]
-                orig_point.z = pose[0][2]
-
-                point.x = pose[0][0] - self.hmd_pose.position.x
-                point.y = pose[0][1] - self.hmd_pose.position.y
-                point.z = pose[0][2] - self.hmd_pose.position.z
-                time = datetime.now()
-                dtime = (time-self.prev_time).total_seconds()
-                self.prev_time = time
-
-                if self.point.get(name, None) is not None:
-                    self.velocity.x = el.vVelocity[0]
-                    self.velocity.y = el.vVelocity[1]
-                    self.velocity.z = el.vVelocity[2]
-                self.point[name] = point
-
-                rot = Quaternion()
-
-                q1 = pyq.Quaternion(pose[1])
-                q1 = q1.normalised
-
-                rot.w = pose[1][0]
-                rot.x = pose[1][1]
-                rot.y = pose[1][2]
-                rot.z = pose[1][3]
-                
-                hmd_msg = Pose()
-                if name == "hmd":
-                    hmd_msg.orientation = rot
-                    hmd_msg.position = orig_point
-                    self.hmd_pose = hmd_msg
-
-                if self.rot.get(name, None) is not None:
-                    diffQuater = q1 - self.rot[name]
-                    conjBoxQuater = q1.inverse
-                    velQuater = ((diffQuater * 2.0) / dtime) * conjBoxQuater
-                    self.ang_velocity.x = velQuater[1]
-                    self.ang_velocity.y = velQuater[2]
-                    self.ang_velocity.z = velQuater[3]
-                    # print(self.ang_velocity)
-                self.rot[name] = q1
-
-                msg = Pose()
-                msg.orientation = rot
-                msg.position = point
 
                 name = f"{key}/{name}"
 
-                self.publish(name, msg, Pose)
+                self.publish(name, pose_msg, Pose)
 
-                vel = Twist()
-                if self.velocity.x == 0.0 and self.velocity.y == 0.0 and self.velocity.z == 0.0 and \
-                        self.ang_velocity.x == 0.0 and self.ang_velocity.y == 0.0 and self.ang_velocity.z == 0.0:
-                    continue
-                vel.linear = self.velocity
-                vel.angular = self.ang_velocity
+                # msg = TwistStamped()
+                # msg.header.stamp = self.get_clock().now().to_msg()
+                # msg.twist.linear = self.velocity
+                # msg.twist.angular = self.ang_velocity
+
+                # name += "/vel"
+                # self.publish(name, msg, TwistStamped)
 
                 name += "/vel"
-                self.publish(name, vel, Twist)
+                self.publish(name, vel_msg, Twist)
 
     def publish(self, name, value, type):
         pub = self.publishers_dict.get(name)
@@ -253,7 +281,7 @@ class VrPublisher(Node):
         pub.publish(value)
 
 
-def main(buttons=False, args=None):
+def main(args=None):
     if not openvr.isRuntimeInstalled:
         raise RuntimeError("OpenVR / SteamVr is not Installed Exit")
     if not openvr.isHmdPresent():
@@ -263,7 +291,7 @@ def main(buttons=False, args=None):
     rclpy.init(args=args)
     system = openvr.init(openvr.VRApplication_Scene)
 
-    minimal_publisher = VrPublisher(system, buttons)
+    minimal_publisher = VrPublisher(system)
 
     rclpy.spin(minimal_publisher)
 

@@ -61,6 +61,16 @@ public:
             fcn3 = std::bind(&MinimalSubscriber::topic_callback, this, std::placeholders::_1, "right");
         subscription_right = this->create_subscription<geometry_msgs::msg::Pose>(
             "/controller/RightHand", 10, fcn3);
+
+        std::function<void(const std::shared_ptr<geometry_msgs::msg::Pose>)>
+            fcn4 = std::bind(&MinimalSubscriber::topic_callback, this, std::placeholders::_1, "RTracker");
+        subscription_Tright = this->create_subscription<geometry_msgs::msg::Pose>(
+            "/tracker/Tracker3", 10, fcn4);
+
+        std::function<void(const std::shared_ptr<geometry_msgs::msg::Pose>)>
+            fcn5 = std::bind(&MinimalSubscriber::topic_callback, this, std::placeholders::_1, "LTracker");
+        subscription_Tleft = this->create_subscription<geometry_msgs::msg::Pose>(
+            "/tracker/Tracker4", 10, fcn5);
     }
 
 private:
@@ -94,6 +104,8 @@ private:
     rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subscription_hmd;
     rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subscription_left;
     rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subscription_right;
+    rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subscription_Tleft;
+    rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subscription_Tright;
 };
 
 int main(int argc, char **argv)

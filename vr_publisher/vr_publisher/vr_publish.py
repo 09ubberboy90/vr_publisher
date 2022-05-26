@@ -161,9 +161,9 @@ class VrPublisher(Node):
         # velocity.x = round(mean[2],2)+0.0
         # velocity.y = round(mean[1],2)+0.0
         # velocity.z = round(mean[0],2)+0.0
-        velocity.x = mean[2] + 0.0
+        velocity.x = -mean[2] + 0.0
         velocity.y = mean[1] + 0.0
-        velocity.z = mean[1] + 0.0
+        velocity.z = -mean[1] + 0.0
         ang_velocity.x = ang_mean[2] + 0.0
         ang_velocity.y = ang_mean[1] + 0.0
         ang_velocity.z = ang_mean[0] + 0.0

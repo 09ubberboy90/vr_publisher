@@ -60,7 +60,7 @@ public:
         : Node("vr_subscriber")
     {
         subscription_ = this->create_subscription<geometry_msgs::msg::Pose>(
-            // "/tracker/Tracker3/vel", 10, std::bind(&VrSubscriber::execute_goal, this, std::placeholders::_1));
+            // "/tracker/Tracker1", 10, std::bind(&VrSubscriber::execute_goal, this, std::placeholders::_1));
             "/controller/RightHand", 10, std::bind(&VrSubscriber::execute_goal, this, std::placeholders::_1));
     }
     geometry_msgs::msg::Pose::SharedPtr pose;
@@ -116,14 +116,14 @@ void publishCommands(std::shared_ptr<VrSubscriber> vr_subscriber)
         target_pose.pose.position.z = vr_subscriber->pose->position.y;
 
         target_pose.pose.orientation.w = vr_subscriber->pose->orientation.w;
-        target_pose.pose.orientation.x = vr_subscriber->pose->orientation.z;
-        target_pose.pose.orientation.y = vr_subscriber->pose->orientation.x;
-        target_pose.pose.orientation.z = vr_subscriber->pose->orientation.y;
+        target_pose.pose.orientation.x = -vr_subscriber->pose->orientation.z;
+        target_pose.pose.orientation.y = -vr_subscriber->pose->orientation.x;
+        target_pose.pose.orientation.z = -vr_subscriber->pose->orientation.y;
         pose_cmd_pub_->publish(target_pose);
     }
     else
     {
-        RCLCPP_INFO(rclcpp::get_logger("moveit_servo.pose_tracking_demo"), "Twist is not defined");
+        RCLCPP_INFO(rclcpp::get_logger("moveit_servo.pose_tracking_demo"), "Pose is not defined");
     }
 }
 

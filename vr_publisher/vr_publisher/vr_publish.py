@@ -27,6 +27,7 @@
 #CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 #OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+from typing import Tuple
 
 import sys
 from datetime import datetime
@@ -119,11 +120,11 @@ def from_controller_state_to_dict(pControllerState):
 
 class VrPublisher(Node):
 
-    def __init__(self, openvr_system):
+    def __init__(self, openvr_system:openvr.IVRSystem):
         super().__init__('vr_publisher')
         timer_period = 0.1
         self.timer = self.create_timer(timer_period, self.timer_callback)
-        self.devices = defaultdict(list)
+        self.devices = {}
         self.system = openvr_system
         self.poses = []
         self.publishers_dict = {}
@@ -137,7 +138,7 @@ class VrPublisher(Node):
         # self.hmd_pose.orientation = Quaternion()
 
 
-    def extract_pose(self, tracked_device, name):
+    def extract_pose(self, tracked_device:openvr.TrackedDevicePose_t, name:str) -> Tuple[Pose, Twist]:
         point = Point()
         velocity = Vector3()
         ang_velocity = Vector3()
@@ -208,8 +209,13 @@ class VrPublisher(Node):
         return pose_msg, vel_msg
 
     def timer_callback(self):
+        # poses = []  # Let waitGetPoses populate the poses structure the first time
+        # poses, game_poses = openvr.VRCompositor().waitGetPoses(poses, None)
         self.poses = self.system.getDeviceToAbsoluteTrackingPose(
             openvr.TrackingUniverseStanding, 0, self.poses)
+
+        
+
         ########
         # # ETrackedDeviceClass = ENUM_TYPE
         # # TrackedDeviceClass_Invalid = ENUM_VALUE_TYPE(0)
@@ -225,53 +231,49 @@ class VrPublisher(Node):
         ########
         for idx, controller in enumerate(self.poses):
             # Needed as the order of the devices may change ( based on which thing got turned on first)
-            if not self.system.isTrackedDeviceConnected(idx):
+            if not controller.bDeviceIsConnected:
                 continue
-            if self.system.getTrackedDeviceClass(idx) == 1 and len(self.devices["hmd"]) < 1:
-                self.devices["hmd"].append(("hmd", controller))
-            elif self.system.getTrackedDeviceClass(idx) == 2 and len(self.devices["controller"]) < 2:
+            if self.system.getTrackedDeviceClass(idx) == 1:
+                self.devices["hmd"] = controller
+            elif self.system.getTrackedDeviceClass(idx) == 2 and (self.devices.get("LeftHand",None) is None or self.devices.get("LeftHand", None) is None):
                 controller_role = self.system.getControllerRoleForTrackedDeviceIndex(
                     idx)
-                print(f"Controller {controller_role}")
-                hand = ""
-                if (controller_role == 1):
-                    hand = "LeftHand"
+                if controller_role == 1:
+                    self.devices["LeftHand"] = controller
                 if controller_role == 2:
-                    hand = "RightHand"
-                self.devices["controller"].append((hand, controller))
-            elif self.system.getTrackedDeviceClass(idx) == 3 and len(self.devices["tracker"]) < 2:
-                self.devices["tracker"].append((f"Tracker{idx}", controller))
+                    self.devices["RightHand"] = controller
+            elif self.system.getTrackedDeviceClass(idx) == 3:
+                    self.devices[f"Tracker{idx}"]= controller
 
-        for key, device in self.devices.items():
-            for idx, (name, el) in enumerate(device):
-                if key == "controller":
-                    result, pControllerState = self.system.getControllerState(
-                        idx)
-                    if result and name:
-                        d = from_controller_state_to_dict(pControllerState)
-                        tmp_name = f"{key}/{name}/trigger"
-                        msg = Bool()
-                        msg.data = d["trigger"] > 0.0
-                        self.publish(tmp_name, msg, Bool)
+        for idx, (name, el) in enumerate(self.devices.items()):
+            if "Hand" in name:
+                result, pControllerState = self.system.getControllerState(
+                    idx)
+                if result and name:
+                    d = from_controller_state_to_dict(pControllerState)
+                    tmp_name = f"{name}/trigger"
+                    msg = Bool()
+                    msg.data = d["ulButtonPressed"] >= 8589934592 # At least TRigger pressed
+                    self.publish(tmp_name, msg, Bool)
         
         
-                pose_msg, vel_msg = self.extract_pose(el, name)
+            pose_msg, vel_msg = self.extract_pose(el, name)
 
 
-                name = f"{key}/{name}"
+            name = f"{name}/pose"
 
-                self.publish(name, pose_msg, Pose)
+            self.publish(name, pose_msg, Pose)
 
-                # msg = TwistStamped()
-                # msg.header.stamp = self.get_clock().now().to_msg()
-                # msg.twist.linear = self.velocity
-                # msg.twist.angular = self.ang_velocity
+            # msg = TwistStamped()
+            # msg.header.stamp = self.get_clock().now().to_msg()
+            # msg.twist.linear = self.velocity
+            # msg.twist.angular = self.ang_velocity
 
-                # name += "/vel"
-                # self.publish(name, msg, TwistStamped)
+            # name += "/vel"
+            # self.publish(name, msg, TwistStamped)
 
-                name += "/vel"
-                self.publish(name, vel_msg, Twist)
+            name = name.replace("pose", "vel")
+            self.publish(name, vel_msg, Twist)
 
     def publish(self, name, value, type):
         pub = self.publishers_dict.get(name)

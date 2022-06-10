@@ -65,7 +65,7 @@ public:
     {
         subscription_ = this->create_subscription<geometry_msgs::msg::Twist>(
             // "/tracker/Tracker3/vel", 10, std::bind(&VrSubscriber::execute_goal, this, std::placeholders::_1));
-            "/controller/RightHand/vel", 10, std::bind(&VrSubscriber::execute_goal, this, std::placeholders::_1));
+            "/RightHand/vel", 10, std::bind(&VrSubscriber::execute_goal, this, std::placeholders::_1));
     }
     geometry_msgs::msg::Twist::SharedPtr twist;
 private:

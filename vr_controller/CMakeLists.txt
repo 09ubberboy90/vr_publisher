@@ -23,8 +23,11 @@ find_package(geometry_msgs REQUIRED)
 find_package(tf2_eigen REQUIRED)
 find_package(rviz_visual_tools REQUIRED)
 find_package(moveit_servo REQUIRED)
+find_package(moveit REQUIRED)
+find_package(moveit_ros_planning_interface REQUIRED)
 find_package(backward_ros REQUIRED)
-
+find_package(std_msgs REQUIRED)
+  
 install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}/
 )
@@ -37,6 +40,14 @@ ament_target_dependencies(rviz_vr_visual
   tf2_eigen
   rviz_visual_tools
   geometry_msgs
+)
+
+add_executable(gripper_controller src/gripper_controller.cpp)
+ament_target_dependencies(gripper_controller
+  rclcpp
+  moveit_ros_planning_interface
+  moveit
+  std_msgs
 )
 
 add_executable(pose_tracking src/pose_tracking.cpp)
@@ -67,7 +78,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-install(TARGETS rviz_vr_visual vr_controller pose_tracking
+install(TARGETS rviz_vr_visual vr_controller pose_tracking gripper_controller
   DESTINATION lib/${PROJECT_NAME}
 )
 

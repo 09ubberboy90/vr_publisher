@@ -235,7 +235,7 @@ class VrPublisher(Node):
                 continue
             if self.system.getTrackedDeviceClass(idx) == 1:
                 self.devices["hmd"] = controller
-            elif self.system.getTrackedDeviceClass(idx) == 2 and (self.devices.get("LeftHand",None) is None or self.devices.get("LeftHand", None) is None):
+            elif self.system.getTrackedDeviceClass(idx) == 2 and (self.devices.get("LeftHand",None) is None or self.devices.get("RightHand", None) is None):
                 controller_role = self.system.getControllerRoleForTrackedDeviceIndex(
                     idx)
                 if controller_role == 1:

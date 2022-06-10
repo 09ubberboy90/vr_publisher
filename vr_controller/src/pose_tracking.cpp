@@ -1,8 +1,8 @@
 /*******************************************************************************
- *      Title     : pose_tracking_example.cpp
- *      Project   : moveit_servo
+ *      Title     : pose_tracking_example.cpp -> pose_tracking.cpp
+ *      Project   : moveit_servo -> vr_controller
  *      Created   : 09/04/2020
- *      Author    : Adam Pettinger
+ *      Author    : Adam Pettinger, Florent Audonnet
  *
  * BSD 3-Clause License
  *

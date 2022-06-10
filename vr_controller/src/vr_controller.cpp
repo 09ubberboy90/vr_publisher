@@ -1,7 +1,7 @@
 /*******************************************************************************
- *      Title     : pose_tracking_example.cpp -> vr_controller
- *      Project   : moveit_servo -> simple_arm_controller
- *      Created   : 09/04/2020
+ *      Title     : servo_cpp_interface_demo.cpp -> vr_controller
+ *      Project   : moveit2_tutorials -> vr_controller
+ *      Created   : 07/13/2020
  *      Author    : Adam Pettinger, Florent Audonnet
  *
  * BSD 3-Clause License

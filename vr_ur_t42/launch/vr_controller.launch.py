@@ -48,7 +48,7 @@ def generate_launch_description():
         "vr_panda", "config/ur10_default_kinematics.yaml"
     )
     servo_yaml = load_yaml(
-        "vr_panda", "config/ur_simulated.yaml"
+        "vr_ur_t42", "config/ur_simulated.yaml"
     )
     servo_params = {"moveit_servo": servo_yaml}
 

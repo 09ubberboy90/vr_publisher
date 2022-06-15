@@ -13,7 +13,7 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    pkg_name = "vr_panda"
+    pkg_name = "vr_ur_t42"
     pkg_share = get_package_share_directory(pkg_name)
 
     vr_publish = Node(package='vr_publisher', 

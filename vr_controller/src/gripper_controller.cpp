@@ -65,7 +65,7 @@ bool change_gripper(moveit::planning_interface::MoveGroupInterface *hand_move_gr
 {
     auto current_state = hand_move_group->getCurrentState();
     std::vector<double> joint_group_positions;
-    current_state->copyJointGroupPositions(current_state->getJointModelGroup("hand"), joint_group_positions);
+    current_state->copyJointGroupPositions(current_state->getJointModelGroup("t42_gripper"), joint_group_positions);
     float pose = (float)state / 1000;
     joint_group_positions[0] = pose;
     joint_group_positions[1] = pose;
@@ -88,12 +88,12 @@ public:
 private:
     void topic_callback(const std_msgs::msg::Bool::SharedPtr msg)
     {
-        if (msg->data)
+        if (msg->data && current_state !=gripper_state::opened)
         {
             RCLCPP_INFO(rclcpp::get_logger("vr_trigger_sub"), "Changing gripper state");
             current_state = gripper_state::opened;
         }
-        else
+        else if (current_state !=gripper_state::closed)
         {
             RCLCPP_INFO(rclcpp::get_logger("vr_trigger_sub"), "Changing gripper state");
             //change_gripper(&hand_move_group, gripper_state::closed);
@@ -118,7 +118,7 @@ int main(int argc, char **argv)
     executor.add_node(move_group_node);
     executor.add_node(vr_trigger);
     std::thread([&executor]() { executor.spin(); }).detach();
-    moveit::planning_interface::MoveGroupInterface hand_move_group(std::shared_ptr<rclcpp::Node>(move_group_node), "hand");
+    moveit::planning_interface::MoveGroupInterface hand_move_group(std::shared_ptr<rclcpp::Node>(move_group_node), "t42_gripper");
     gripper_state current_state = opened;
 
     hand_move_group.setMaxVelocityScalingFactor(1.0);

@@ -18,7 +18,7 @@ def generate_launch_description():
 
     ur10 = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_directory("ur_with_t42"), 'launch', 'ur_t42_control.launch.py'),),
+            os.path.join(get_package_share_directory("ur_t42"), 'launch', 'ur_t42_control.launch.py'),),
             launch_arguments=[
                 ("ur_type", robot_type),
                 ("robot_ip", "yyy.yyy.yyy.yyy"),
@@ -26,20 +26,20 @@ def generate_launch_description():
                 ("launch_rviz", "false"),
                 ("initial_joint_controller", "joint_trajectory_controller"),
                 ("description_file","ur_with_gripper.xacro"),
-                ("description_package", "ur_with_t42"),
+                ("description_package", "ur_t42"),
             ],)
 
     moveit = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_directory("ur_with_t42"), 'launch', 'ur_t42_moveit.launch.py'),),            
+            os.path.join(get_package_share_directory("ur_t42"), 'launch', 'ur_t42_moveit.launch.py'),),            
             launch_arguments=[
                 ("ur_type", robot_type),
                 ("launch_rviz", "true"),
                 ("launch_servo", "false"),
                 ("description_file","ur_with_gripper.xacro"),
-                ("description_package", "ur_with_t42"),
+                ("description_package", "ur_t42"),
                 ("moveit_config_file","ur_with_gripper.srdf.xacro"),
-                ("moveit_config_package", "ur_with_t42"),
+                ("moveit_config_package", "ur_t42"),
 
             ],)    
 

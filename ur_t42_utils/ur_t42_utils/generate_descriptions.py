@@ -1,9 +1,6 @@
-from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.actions import OpaqueFunction
-from launch.conditions import IfCondition
-from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
-from launch_ros.actions import Node
+from launch.substitutions import (Command, FindExecutable, LaunchConfiguration,
+                                  PathJoinSubstitution)
 from launch_ros.substitutions import FindPackageShare
 from ur_moveit_config.launch_common import load_yaml
 
@@ -36,33 +33,40 @@ def generate_urdf_control(context):
     tool_voltage = LaunchConfiguration("tool_voltage")
 
     joint_limit_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config", ur_type, "joint_limits.yaml"]
+        [FindPackageShare(description_package), "config",
+         ur_type, "joint_limits.yaml"]
     )
     kinematics_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config", ur_type, "default_kinematics.yaml"]
+        [FindPackageShare(description_package), "config",
+         ur_type, "default_kinematics.yaml"]
     )
     physical_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config", ur_type, "physical_parameters.yaml"]
+        [FindPackageShare(description_package), "config",
+         ur_type, "physical_parameters.yaml"]
     )
     visual_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config", ur_type, "visual_parameters.yaml"]
+        [FindPackageShare(description_package), "config",
+         ur_type, "visual_parameters.yaml"]
     )
     script_filename = PathJoinSubstitution(
-        [FindPackageShare("ur_robot_driver"), "resources", "ros_control.urscript"]
+        [FindPackageShare("ur_robot_driver"), "resources",
+         "ros_control.urscript"]
     )
     input_recipe_filename = PathJoinSubstitution(
-        [FindPackageShare("ur_robot_driver"), "resources", "rtde_input_recipe.txt"]
+        [FindPackageShare("ur_robot_driver"), "resources",
+         "rtde_input_recipe.txt"]
     )
     output_recipe_filename = PathJoinSubstitution(
-        [FindPackageShare("ur_robot_driver"), "resources", "rtde_output_recipe.txt"]
+        [FindPackageShare("ur_robot_driver"), "resources",
+         "rtde_output_recipe.txt"]
     )
-
 
     robot_description_content = Command(
         [
             PathJoinSubstitution([FindExecutable(name="xacro")]),
             " ",
-            PathJoinSubstitution([FindPackageShare(description_package), "urdf", description_file]),
+            PathJoinSubstitution(
+                [FindPackageShare(description_package), "urdf", description_file]),
             " ",
             "robot_ip:=",
             robot_ip,
@@ -143,6 +147,7 @@ def generate_urdf_control(context):
     )
     return robot_description_content
 
+
 def generate_urdf_moveit(context):
 
     for key, value in context.items():
@@ -158,23 +163,28 @@ def generate_urdf_moveit(context):
     prefix = LaunchConfiguration("prefix")
 
     joint_limit_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config", ur_type, "joint_limits.yaml"]
+        [FindPackageShare(description_package), "config",
+         ur_type, "joint_limits.yaml"]
     )
     kinematics_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config", ur_type, "default_kinematics.yaml"]
+        [FindPackageShare(description_package), "config",
+         ur_type, "default_kinematics.yaml"]
     )
     physical_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config", ur_type, "physical_parameters.yaml"]
+        [FindPackageShare(description_package), "config",
+         ur_type, "physical_parameters.yaml"]
     )
     visual_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config", ur_type, "visual_parameters.yaml"]
+        [FindPackageShare(description_package), "config",
+         ur_type, "visual_parameters.yaml"]
     )
 
     robot_description_content = Command(
         [
             PathJoinSubstitution([FindExecutable(name="xacro")]),
             " ",
-            PathJoinSubstitution([FindPackageShare(description_package), "urdf", description_file]),
+            PathJoinSubstitution(
+                [FindPackageShare(description_package), "urdf", description_file]),
             " ",
             "robot_ip:=xxx.yyy.zzz.www",
             " ",
@@ -219,6 +229,7 @@ def generate_urdf_moveit(context):
 
     return robot_description_content
 
+
 def generate_srdf(context):
     # prefix = context["prefix"]
     # moveit_config_package = context["moveit_config_package"]
@@ -236,7 +247,8 @@ def generate_srdf(context):
             PathJoinSubstitution([FindExecutable(name="xacro")]),
             " ",
             PathJoinSubstitution(
-                [FindPackageShare(moveit_config_package), "srdf", moveit_config_file]
+                [FindPackageShare(moveit_config_package),
+                 "srdf", moveit_config_file]
             ),
             " ",
             "name:=",
@@ -251,6 +263,7 @@ def generate_srdf(context):
     )
 
     return robot_description_semantic_content
+
 
 def generate_launch_arguments_control(context):
     declared_arguments = []
@@ -318,7 +331,7 @@ def generate_launch_arguments_control(context):
             default_value="ur.urdf.xacro",
             description="URDF/XACRO description file with the robot.",
         )
-    )    
+    )
     declared_arguments.append(
         DeclareLaunchArgument(
             "t42_description_package",
@@ -373,7 +386,8 @@ def generate_launch_arguments_control(context):
         )
     )
     declared_arguments.append(
-        DeclareLaunchArgument("launch_rviz", default_value="true", description="Launch RViz?")
+        DeclareLaunchArgument(
+            "launch_rviz", default_value="true", description="Launch RViz?")
     )
     declared_arguments.append(
         DeclareLaunchArgument(
@@ -452,6 +466,7 @@ def generate_launch_arguments_control(context):
         )
     )
     return declared_arguments
+
 
 def generate_launch_arguments_moveit(context):
     declared_arguments = []
@@ -532,10 +547,63 @@ def generate_launch_arguments_moveit(context):
         )
     )
     declared_arguments.append(
-        DeclareLaunchArgument("launch_rviz", default_value="true", description="Launch RViz?")
+        DeclareLaunchArgument(
+            "launch_rviz", default_value="true", description="Launch RViz?")
     )
     declared_arguments.append(
-        DeclareLaunchArgument("launch_servo", default_value="true", description="Launch Servo?")
+        DeclareLaunchArgument(
+            "launch_servo", default_value="true", description="Launch Servo?")
     )
     return declared_arguments
 
+def generate_controllers(context):
+    controllers_yaml = load_yaml("ur_moveit_config", "config/controllers.yaml")
+    t42_controllers_yaml = load_yaml(
+        "t42_gripper_moveit_config", "config/t42_controller.yaml")
+    result = dict(controllers_yaml, **t42_controllers_yaml)
+    result.update((k, controllers_yaml[k] + t42_controllers_yaml[k])
+                  for k in set(controllers_yaml).intersection(t42_controllers_yaml))
+    return result
+    
+def generate_launch_arguments_ur_t42(context):
+    declared_arguments = []
+    # UR specific arguments
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "ur_type",
+            description="Type/series of used UR robot.",
+            default_value="ur10",
+        )
+    )
+    # General arguments
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "description_package",
+            default_value="ur_t42",
+            description="Description package with robot URDF/XACRO files. Usually the argument \
+        is not set, it enables use of a custom description.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "description_file",
+            default_value="ur_with_gripper.xacro",
+            description="URDF/XACRO description file with the robot.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "moveit_config_package",
+            default_value="ur_t42",
+            description="MoveIt config package with robot SRDF/XACRO files. Usually the argument \
+        is not set, it enables use of a custom moveit config.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "moveit_config_file",
+            default_value="ur_with_gripper.srdf.xacro",
+            description="MoveIt SRDF/XACRO description file with the robot.",
+        )
+    )
+    return declared_arguments

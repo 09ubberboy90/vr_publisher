@@ -30,21 +30,25 @@
 #
 # Author: Denis Stogl, Florent Audonnet
 
-from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch.actions import OpaqueFunction
-from launch.conditions import IfCondition
-from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
+import sys
+
+from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from ur_moveit_config.launch_common import load_yaml
-import sys
-from ament_index_python.packages import get_package_share_directory
+
+from launch import LaunchDescription
+from launch.actions import OpaqueFunction
+from launch.conditions import IfCondition
+from launch.substitutions import (LaunchConfiguration,
+                                  PathJoinSubstitution)
+
 try:
     sys.path.append(get_package_share_directory("ur_t42_utils"))
     from ur_t42_utils import generate_descriptions
 except Exception:
     print("Failed to generate description. Please make sure you have ur_t42_utils compiled and sourced")
+
 
 def launch_setup(context, *args, **kwargs):
 
@@ -54,10 +58,13 @@ def launch_setup(context, *args, **kwargs):
     launch_rviz = LaunchConfiguration("launch_rviz")
     launch_servo = LaunchConfiguration("launch_servo")
 
-    robot_description_content = generate_descriptions.generate_urdf_moveit(locals())
+    robot_description_content = generate_descriptions.generate_urdf_moveit(
+        locals())
     robot_description = {"robot_description": robot_description_content}
-    robot_description_semantic_content =generate_descriptions.generate_srdf(locals())
-    robot_description_semantic = {"robot_description_semantic": robot_description_semantic_content}
+    robot_description_semantic_content = generate_descriptions.generate_srdf(
+        locals())
+    robot_description_semantic = {
+        "robot_description_semantic": robot_description_semantic_content}
 
     robot_description_kinematics = PathJoinSubstitution(
         [FindPackageShare(moveit_config_package), "config", "kinematics.yaml"]
@@ -75,23 +82,19 @@ def launch_setup(context, *args, **kwargs):
             "start_state_max_bounds_error": 0.1,
         }
     }
-    ompl_planning_yaml = load_yaml("ur_moveit_config", "config/ompl_planning.yaml")
+    ompl_planning_yaml = load_yaml(
+        "ur_moveit_config", "config/ompl_planning.yaml")
     ompl_planning_pipeline_config["move_group"].update(ompl_planning_yaml)
-    
-    ompl_planning_yaml_gripper = load_yaml("t42_gripper_moveit_config", "config/ompl_planning.yaml")
-    ompl_planning_pipeline_config["move_group"].update(ompl_planning_yaml_gripper)
+
+    ompl_planning_yaml_gripper = load_yaml(
+        "t42_gripper_moveit_config", "config/ompl_planning.yaml")
+    ompl_planning_pipeline_config["move_group"].update(
+        ompl_planning_yaml_gripper)
 
     # Trajectory Execution Configuration
-    controllers_yaml = load_yaml("ur_moveit_config", "config/controllers.yaml")
-    t42_controllers_yaml = load_yaml("t42_gripper_moveit_config", "config/t42_controller.yaml")
-    result = dict(controllers_yaml, **t42_controllers_yaml)
-    result.update((k, controllers_yaml[k] + t42_controllers_yaml[k])
-                    for k in set(controllers_yaml).intersection(t42_controllers_yaml))
-    
-    print(result)
-
+    controllers = generate_descriptions.generate_controllers(locals())
     moveit_controllers = {
-        "moveit_simple_controller_manager": result,
+        "moveit_simple_controller_manager": controllers,
         "moveit_controller_manager": "moveit_simple_controller_manager/MoveItSimpleControllerManager",
     }
 
@@ -177,13 +180,15 @@ def launch_setup(context, *args, **kwargs):
         },
     )
 
-    nodes_to_start = [move_group_node, mongodb_server_node, rviz_node, servo_node]
+    nodes_to_start = [move_group_node,
+                      mongodb_server_node, rviz_node, servo_node]
 
     return nodes_to_start
 
 
 def generate_launch_description():
 
-    declared_arguments = [OpaqueFunction(function=generate_descriptions.generate_launch_arguments_moveit)]
+    declared_arguments = [OpaqueFunction(
+        function=generate_descriptions.generate_launch_arguments_moveit)]
 
     return LaunchDescription(declared_arguments + [OpaqueFunction(function=launch_setup)])

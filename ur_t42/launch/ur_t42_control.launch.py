@@ -30,15 +30,17 @@
 #
 # Author: Denis Stogl, Florent Audonnet
 import sys
-from ament_index_python.packages import get_package_share_directory
 
-from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch.actions import OpaqueFunction
-from launch.conditions import IfCondition, UnlessCondition
-from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
+from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
+from launch.conditions import IfCondition, UnlessCondition
+from launch.substitutions import (Command, FindExecutable, LaunchConfiguration,
+                                  PathJoinSubstitution)
+
 try:
     sys.path.append(get_package_share_directory("ur_t42_utils"))
     from ur_t42_utils import generate_descriptions
@@ -57,7 +59,8 @@ def launch_setup(context, *args, **kwargs):
     description_package = LaunchConfiguration("description_package")
     use_fake_hardware = LaunchConfiguration("use_fake_hardware")
     initial_joint_controller = LaunchConfiguration("initial_joint_controller")
-    activate_joint_controller = LaunchConfiguration("activate_joint_controller")
+    activate_joint_controller = LaunchConfiguration(
+        "activate_joint_controller")
     launch_rviz = LaunchConfiguration("launch_rviz")
     headless_mode = LaunchConfiguration("headless_mode")
     launch_dashboard_client = LaunchConfiguration("launch_dashboard_client")
@@ -65,8 +68,8 @@ def launch_setup(context, *args, **kwargs):
     tool_device_name = LaunchConfiguration("tool_device_name")
     tool_tcp_port = LaunchConfiguration("tool_tcp_port")
 
-
-    robot_description_content = generate_descriptions.generate_urdf_control(locals())
+    robot_description_content = generate_descriptions.generate_urdf_control(
+        locals())
     robot_description = {"robot_description": robot_description_content}
 
     initial_joint_controllers = PathJoinSubstitution(
@@ -93,7 +96,8 @@ def launch_setup(context, *args, **kwargs):
     control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
-        parameters=[robot_description, update_rate_config_file, initial_joint_controllers, t42_initial_joint_controllers],
+        parameters=[robot_description, update_rate_config_file,
+                    initial_joint_controllers, t42_initial_joint_controllers],
         output={
             "stdout": "screen",
             "stderr": "screen",
@@ -104,7 +108,8 @@ def launch_setup(context, *args, **kwargs):
     ur_control_node = Node(
         package="ur_robot_driver",
         executable="ur_ros2_control_node",
-        parameters=[robot_description, update_rate_config_file, initial_joint_controllers],
+        parameters=[robot_description, update_rate_config_file,
+                    initial_joint_controllers],
         output={
             "stdout": "screen",
             "stderr": "screen",
@@ -114,7 +119,8 @@ def launch_setup(context, *args, **kwargs):
 
     dashboard_client_node = Node(
         package="ur_robot_driver",
-        condition=IfCondition(launch_dashboard_client) and UnlessCondition(use_fake_hardware),
+        condition=IfCondition(launch_dashboard_client) and UnlessCondition(
+            use_fake_hardware),
         executable="dashboard_client",
         name="dashboard_client",
         output="screen",
@@ -177,7 +183,8 @@ def launch_setup(context, *args, **kwargs):
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"],
+        arguments=["joint_state_broadcaster",
+                   "--controller-manager", "/controller_manager"],
     )
 
     io_and_status_controller_spawner = Node(
@@ -209,7 +216,8 @@ def launch_setup(context, *args, **kwargs):
     forward_position_controller_spawner_stopped = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["forward_position_controller", "-c", "/controller_manager", "--stopped"],
+        arguments=["forward_position_controller",
+                   "-c", "/controller_manager", "--stopped"],
     )
 
     # There may be other controllers of the joints, but this is the initially-started one
@@ -222,7 +230,8 @@ def launch_setup(context, *args, **kwargs):
     initial_joint_controller_spawner_stopped = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=[initial_joint_controller, "-c", "/controller_manager", "--stopped"],
+        arguments=[initial_joint_controller, "-c",
+                   "/controller_manager", "--stopped"],
         condition=UnlessCondition(activate_joint_controller),
     )
 
@@ -230,7 +239,7 @@ def launch_setup(context, *args, **kwargs):
         package="controller_manager",
         executable="spawner",
         arguments=["t42_gripper_controller",
-                    "--controller-manager", "/controller_manager"],
+                   "--controller-manager", "/controller_manager"],
     )
 
     nodes_to_start = [
@@ -255,6 +264,7 @@ def launch_setup(context, *args, **kwargs):
 
 
 def generate_launch_description():
-    declared_arguments = [OpaqueFunction(function=generate_descriptions.generate_launch_arguments_control)]
+    declared_arguments = [OpaqueFunction(
+        function=generate_descriptions.generate_launch_arguments_control)]
 
     return LaunchDescription(declared_arguments + [OpaqueFunction(function=launch_setup)])

@@ -1,10 +1,17 @@
-import os
+import sys, os
 import yaml
-from launch import LaunchDescription
-from launch.actions import ExecuteProcess
-from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
-import xacro
+from launch_ros.actions import Node
+
+from launch.actions import OpaqueFunction
+from launch import LaunchDescription, LaunchDescriptionSource
+from launch.actions import IncludeLaunchDescription
+
+try:
+    sys.path.append(get_package_share_directory("ur_t42_utils"))
+    from ur_t42_utils import generate_descriptions
+except Exception:
+    print("Failed to generate description. Please make sure you have ur_t42_utils compiled and sourced")
 
 
 def load_file(package_name, file_path):
@@ -29,31 +36,21 @@ def load_yaml(package_name, file_path):
         return None
 
 
-def generate_launch_description():
-    robot_description_config = load_file("vr_panda", 
-        os.path.join(
-            "urdf",
-            "ur10.urdf",
-        )
-)
-    robot_description = {"robot_description": robot_description_config}
-
-    robot_description_semantic_config = load_file(
-        "vr_panda", "srdf/ur10.srdf"
-    )
-    robot_description_semantic = {
-        "robot_description_semantic": robot_description_semantic_config
-    }
+def launch_setup(context):
+    robot_description_content = generate_descriptions.generate_urdf_moveit(locals())
+    robot_description = {"robot_description": robot_description_content}
+    robot_description_semantic_content =generate_descriptions.generate_srdf(locals())
+    robot_description_semantic = {"robot_description_semantic": robot_description_semantic_content}
     pose_tracking_yaml = load_yaml("moveit_servo", "config/pose_tracking_settings.yaml")
     pose_tracking_params = {"moveit_servo": pose_tracking_yaml}
 
 
 
     kinematics_yaml = load_yaml(
-        "vr_panda", "config/ur10_default_kinematics.yaml"
+        "ur_t42", "config/kinematics.yaml"
     )
     # servo_yaml = load_yaml("vr_panda", "config/ur_simulated.yaml")
-    servo_yaml = load_yaml("vr_panda", "config/ur_simulated.yaml")
+    servo_yaml = load_yaml("vr_ur_t42", "config/ur_simulated.yaml")
     servo_params = {"moveit_servo": servo_yaml}
 
     pose_tracking_node = Node(
@@ -72,8 +69,13 @@ def generate_launch_description():
 
     # ros2_control using FakeSystem as hardware
 
-    return LaunchDescription(
-        [
-            pose_tracking_node,
-        ]
-    )
+    return [pose_tracking_node,]
+
+
+def generate_launch_description():
+    declared_arguments_general = OpaqueFunction(
+        function=generate_descriptions.generate_launch_arguments_ur_t42)
+    declared_arguments = [OpaqueFunction(
+        function=generate_descriptions.generate_launch_arguments_moveit)]
+    desc = IncludeLaunchDescription(LaunchDescriptionSource(LaunchDescription(declared_arguments + [OpaqueFunction(function=launch_setup)])))
+    return LaunchDescription([declared_arguments_general,desc])

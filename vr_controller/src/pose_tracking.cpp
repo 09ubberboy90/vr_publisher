@@ -61,7 +61,7 @@ public:
     {
         subscription_ = this->create_subscription<geometry_msgs::msg::Pose>(
             // "/tracker/Tracker1", 10, std::bind(&VrSubscriber::execute_goal, this, std::placeholders::_1));
-            "/RightHand/pos", 10, std::bind(&VrSubscriber::execute_goal, this, std::placeholders::_1));
+            "/RightHand/pose", 10, std::bind(&VrSubscriber::execute_goal, this, std::placeholders::_1));
     }
     geometry_msgs::msg::Pose::SharedPtr pose;
 

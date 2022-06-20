@@ -50,27 +50,27 @@ public:
         std::function<void(const std::shared_ptr<geometry_msgs::msg::Pose>)>
             fcn1 = std::bind(&MinimalSubscriber::topic_callback, this, std::placeholders::_1, "hmd");
         subscription_hmd = this->create_subscription<geometry_msgs::msg::Pose>(
-            "/hmd/pos", 10, fcn1);
+            "/hmd/pose", 10, fcn1);
 
         std::function<void(const std::shared_ptr<geometry_msgs::msg::Pose>)>
             fcn2 = std::bind(&MinimalSubscriber::topic_callback, this, std::placeholders::_1, "left");
         subscription_left = this->create_subscription<geometry_msgs::msg::Pose>(
-            "/LeftHand/pos", 10, fcn2);
+            "/LeftHand/pose", 10, fcn2);
 
         std::function<void(const std::shared_ptr<geometry_msgs::msg::Pose>)>
             fcn3 = std::bind(&MinimalSubscriber::topic_callback, this, std::placeholders::_1, "right");
         subscription_right = this->create_subscription<geometry_msgs::msg::Pose>(
-            "/RightHand/pos", 10, fcn3);
+            "/RightHand/pose", 10, fcn3);
 
         std::function<void(const std::shared_ptr<geometry_msgs::msg::Pose>)>
             fcn4 = std::bind(&MinimalSubscriber::topic_callback, this, std::placeholders::_1, "RTracker");
         subscription_Tright = this->create_subscription<geometry_msgs::msg::Pose>(
-            "/Tracker1/pos", 10, fcn4);
+            "/Tracker1/pose", 10, fcn4);
 
         std::function<void(const std::shared_ptr<geometry_msgs::msg::Pose>)>
             fcn5 = std::bind(&MinimalSubscriber::topic_callback, this, std::placeholders::_1, "LTracker");
         subscription_Tleft = this->create_subscription<geometry_msgs::msg::Pose>(
-            "/Tracker2/pos", 10, fcn5);
+            "/Tracker2/pose", 10, fcn5);
     }
 
 private:

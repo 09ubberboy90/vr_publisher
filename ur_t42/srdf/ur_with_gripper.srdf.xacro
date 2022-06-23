@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<robot xmlns:xacro="http://wiki.ros.org/xacro" name="ur_with_gripper">
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="$(arg name)">
+
+  <xacro:arg name="name" default="ur"/>
 
   <!-- parameters -->
   <xacro:include filename="$(find t42_gripper_moveit_config)/srdf/t42_macro.srdf.xacro"/>
@@ -10,7 +12,7 @@
 
   <xacro:include filename="$(find ur_moveit_config)/srdf/ur_macro.srdf.xacro"/>
 
-  <xacro:ur_srdf name="ur" prefix="$(arg prefix)"/>
+  <xacro:ur_srdf name="$(arg name)" prefix="$(arg prefix)"/>
   <disable_collisions link1="wrist_3_link" link2="t42_base_link" reason="Adjacent"/>
 
 </robot>

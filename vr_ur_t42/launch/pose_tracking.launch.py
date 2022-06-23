@@ -47,7 +47,7 @@ def launch_setup(context):
 
 
     kinematics_yaml = load_yaml(
-        "ur_t42", "config/kinematics.yaml"
+        "ur_t42", "config/ur10/default_kinematics.yaml"
     )
     # servo_yaml = load_yaml("vr_panda", "config/ur_simulated.yaml")
     servo_yaml = load_yaml("vr_ur_t42", "config/ur_simulated.yaml")

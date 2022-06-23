@@ -63,12 +63,21 @@ bool wait_for_exec(moveit::planning_interface::MoveGroupInterface *move_group)
 
 bool change_gripper(moveit::planning_interface::MoveGroupInterface *hand_move_group, gripper_state state)
 {
-    auto current_state = hand_move_group->getCurrentState();
-    std::vector<double> joint_group_positions;
-    current_state->copyJointGroupPositions(current_state->getJointModelGroup("t42_gripper"), joint_group_positions);
-    float pose = (float)state / 1000;
-    joint_group_positions[0] = pose;
-    joint_group_positions[1] = pose;
+    std::vector<double> joint_group_positions(4);
+    if(state == gripper_state::opened)
+    { 
+        joint_group_positions[0] = 0.0;
+        joint_group_positions[1] = 0.0;
+        joint_group_positions[2] = 0.0;
+        joint_group_positions[3] = 0.0;
+    }
+    else if(state ==gripper_state::closed)
+    {
+        joint_group_positions[0] = 1.57;
+        joint_group_positions[1] = 0.0;
+        joint_group_positions[2] = 1.57;
+        joint_group_positions[3] = 0.0;
+    }
     hand_move_group->setJointValueTarget(joint_group_positions);
     return wait_for_exec(hand_move_group);
 }
@@ -93,7 +102,7 @@ private:
             RCLCPP_INFO(rclcpp::get_logger("vr_trigger_sub"), "Changing gripper state");
             current_state = gripper_state::opened;
         }
-        else if (current_state !=gripper_state::closed)
+        else if (!msg->data && current_state !=gripper_state::closed)
         {
             RCLCPP_INFO(rclcpp::get_logger("vr_trigger_sub"), "Changing gripper state");
             //change_gripper(&hand_move_group, gripper_state::closed);

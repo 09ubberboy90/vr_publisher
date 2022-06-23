@@ -81,8 +81,5 @@ endif()
 install(TARGETS rviz_vr_visual vr_controller pose_tracking gripper_controller
   DESTINATION lib/${PROJECT_NAME}
 )
-
-install(DIRECTORY include
-  DESTINATION include/${PROJECT_NAME}/)
     
 ament_package()

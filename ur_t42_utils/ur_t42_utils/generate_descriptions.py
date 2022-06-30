@@ -607,3 +607,15 @@ def generate_launch_arguments_ur_t42(context):
         )
     )
     return declared_arguments
+    
+def generate_launch_arguments_ur(context):
+    declared_arguments = []
+    # UR specific arguments
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "ur_type",
+            description="Type/series of used UR robot.",
+            default_value="ur10",
+        )
+    )
+    return declared_arguments

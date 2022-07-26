@@ -73,9 +73,11 @@ def launch_setup(context):
 
 
 def generate_launch_description():
+    declared_arguments_ur = OpaqueFunction(
+        function=generate_descriptions.generate_launch_arguments_ur)
     declared_arguments_general = OpaqueFunction(
         function=generate_descriptions.generate_launch_arguments_ur_t42)
     declared_arguments = [OpaqueFunction(
         function=generate_descriptions.generate_launch_arguments_moveit)]
     desc = IncludeLaunchDescription(LaunchDescriptionSource(LaunchDescription(declared_arguments + [OpaqueFunction(function=launch_setup)])))
-    return LaunchDescription([declared_arguments_general,desc])
+    return LaunchDescription([declared_arguments_ur, declared_arguments_general,desc])

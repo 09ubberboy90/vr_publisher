@@ -1,4 +1,4 @@
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, LogInfo
 from launch.substitutions import (Command, FindExecutable, LaunchConfiguration,
                                   PathJoinSubstitution)
 from launch_ros.substitutions import FindPackageShare
@@ -17,6 +17,7 @@ def generate_urdf_control(context):
     safety_k_position = LaunchConfiguration("safety_k_position")
     # General arguments
     description_package = LaunchConfiguration("description_package")
+    original_description_package = LaunchConfiguration("original_description_package")
     description_file = LaunchConfiguration("description_file")
     prefix = LaunchConfiguration("prefix")
     use_fake_hardware = LaunchConfiguration("use_fake_hardware")
@@ -33,19 +34,19 @@ def generate_urdf_control(context):
     tool_voltage = LaunchConfiguration("tool_voltage")
 
     joint_limit_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config",
+        [FindPackageShare(original_description_package), "config",
          ur_type, "joint_limits.yaml"]
     )
     kinematics_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config",
+        [FindPackageShare(original_description_package), "config",
          ur_type, "default_kinematics.yaml"]
     )
     physical_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config",
+        [FindPackageShare(original_description_package), "config",
          ur_type, "physical_parameters.yaml"]
     )
     visual_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config",
+        [FindPackageShare(original_description_package), "config",
          ur_type, "visual_parameters.yaml"]
     )
     script_filename = PathJoinSubstitution(
@@ -159,23 +160,24 @@ def generate_urdf_moveit(context):
     safety_k_position = LaunchConfiguration("safety_k_position")
     # General arguments
     description_package = LaunchConfiguration("description_package")
+    original_description_package = LaunchConfiguration("original_description_package")
     description_file = LaunchConfiguration("description_file")
     prefix = LaunchConfiguration("prefix")
 
     joint_limit_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config",
+        [FindPackageShare(original_description_package), "config",
          ur_type, "joint_limits.yaml"]
     )
     kinematics_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config",
+        [FindPackageShare(original_description_package), "config",
          ur_type, "default_kinematics.yaml"]
     )
     physical_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config",
+        [FindPackageShare(original_description_package), "config",
          ur_type, "physical_parameters.yaml"]
     )
     visual_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config",
+        [FindPackageShare(original_description_package), "config",
          ur_type, "visual_parameters.yaml"]
     )
 
@@ -320,6 +322,14 @@ def generate_launch_arguments_control(context):
     declared_arguments.append(
         DeclareLaunchArgument(
             "description_package",
+            default_value="ur_description",
+            description="Description package with robot URDF/XACRO files. Usually the argument \
+        is not set, it enables use of a custom description.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "original_description_package",
             default_value="ur_description",
             description="Description package with robot URDF/XACRO files. Usually the argument \
         is not set, it enables use of a custom description.",
@@ -510,6 +520,14 @@ def generate_launch_arguments_moveit(context):
     )
     declared_arguments.append(
         DeclareLaunchArgument(
+            "original_description_package",
+            default_value="ur_description",
+            description="Description package with robot URDF/XACRO files. Usually the argument \
+        is not set, it enables use of a custom description.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
             "description_file",
             default_value="ur.urdf.xacro",
             description="URDF/XACRO description file with the robot.",
@@ -567,14 +585,6 @@ def generate_controllers(context):
     
 def generate_launch_arguments_ur_t42(context):
     declared_arguments = []
-    # UR specific arguments
-    declared_arguments.append(
-        DeclareLaunchArgument(
-            "ur_type",
-            description="Type/series of used UR robot.",
-            default_value="ur10",
-        )
-    )
     # General arguments
     declared_arguments.append(
         DeclareLaunchArgument(
@@ -615,7 +625,7 @@ def generate_launch_arguments_ur(context):
         DeclareLaunchArgument(
             "ur_type",
             description="Type/series of used UR robot.",
-            default_value="ur10",
+            default_value="ur3",
         )
     )
     return declared_arguments

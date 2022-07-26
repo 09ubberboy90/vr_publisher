@@ -36,7 +36,7 @@ from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, OpaqueFunction, LogInfo
 from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import (Command, FindExecutable, LaunchConfiguration,
                                   PathJoinSubstitution)
@@ -71,7 +71,8 @@ def launch_setup(context, *args, **kwargs):
     robot_description_content = generate_descriptions.generate_urdf_control(
         locals())
     robot_description = {"robot_description": robot_description_content}
-
+    # print(robot_description)
+    # log = LogInfo(msg=robot_description_content)
     initial_joint_controllers = PathJoinSubstitution(
         [FindPackageShare(runtime_config_package), "config", controllers_file]
     )
@@ -220,6 +221,13 @@ def launch_setup(context, *args, **kwargs):
                    "-c", "/controller_manager"],
     )
 
+    joint_position_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["joint_trajectory_controller",
+                   "-c", "/controller_manager", "--stopped"],
+    )
+
     # There may be other controllers of the joints, but this is the initially-started one
     # initial_joint_controller_spawner_started = Node(
     #     package="controller_manager",
@@ -256,7 +264,9 @@ def launch_setup(context, *args, **kwargs):
         force_torque_sensor_broadcaster_spawner,
         forward_position_controller_spawner,
         initial_joint_controller_spawner_stopped,
-        t42_controller
+        t42_controller,
+        joint_position_controller_spawner
+        # log
     ]
 
     return nodes_to_start

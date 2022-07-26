@@ -39,15 +39,18 @@ def launch_setup(context):
     return [
         vr_publish,
         visual,
-        TimerAction(
-            period=5.,
-            actions=[
-                servo_controller
-            ]
-        )
+        # TimerAction(
+        #     period=5.,
+        #     actions=[
+        #         servo_controller
+        #     ]
+        # )
     ]
 
 def generate_launch_description():
+    declared_arguments_ur = [OpaqueFunction(
+    function=generate_descriptions.generate_launch_arguments_ur)]
+
     declared_arguments_general = [OpaqueFunction(
         function=generate_descriptions.generate_launch_arguments_ur_t42)]
-    return LaunchDescription(declared_arguments_general + [OpaqueFunction(function=launch_setup)])
+    return LaunchDescription(declared_arguments_ur + declared_arguments_general + [OpaqueFunction(function=launch_setup)])

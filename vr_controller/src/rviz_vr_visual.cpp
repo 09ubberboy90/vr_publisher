@@ -65,12 +65,12 @@ public:
         std::function<void(const std::shared_ptr<geometry_msgs::msg::Pose>)>
             fcn4 = std::bind(&MinimalSubscriber::topic_callback, this, std::placeholders::_1, "RTracker");
         subscription_Tright = this->create_subscription<geometry_msgs::msg::Pose>(
-            "/Tracker1/pose", 10, fcn4);
+            "/Tracker3/pose", 10, fcn4);
 
         std::function<void(const std::shared_ptr<geometry_msgs::msg::Pose>)>
             fcn5 = std::bind(&MinimalSubscriber::topic_callback, this, std::placeholders::_1, "LTracker");
         subscription_Tleft = this->create_subscription<geometry_msgs::msg::Pose>(
-            "/Tracker2/pose", 10, fcn5);
+            "/Tracker4/pose", 10, fcn5);
     }
 
 private:

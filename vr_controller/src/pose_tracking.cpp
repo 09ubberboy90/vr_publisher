@@ -60,8 +60,8 @@ public:
         : Node("vr_subscriber")
     {
         subscription_ = this->create_subscription<geometry_msgs::msg::Pose>(
-            // "/tracker/Tracker1", 10, std::bind(&VrSubscriber::execute_goal, this, std::placeholders::_1));
-            "/RightHand/pose", 10, std::bind(&VrSubscriber::execute_goal, this, std::placeholders::_1));
+            "/Tracker3/pose", 10, std::bind(&VrSubscriber::execute_goal, this, std::placeholders::_1));
+            // "/RightHand/pose", 10, std::bind(&VrSubscriber::execute_goal, this, std::placeholders::_1));
     }
     geometry_msgs::msg::Pose::SharedPtr pose;
 
@@ -116,9 +116,9 @@ void publishCommands(std::shared_ptr<VrSubscriber> vr_subscriber)
         target_pose.pose.position.z = vr_subscriber->pose->position.y;
 
         target_pose.pose.orientation.w = vr_subscriber->pose->orientation.w;
-        target_pose.pose.orientation.x = -vr_subscriber->pose->orientation.z;
-        target_pose.pose.orientation.y = -vr_subscriber->pose->orientation.x;
-        target_pose.pose.orientation.z = -vr_subscriber->pose->orientation.y;
+        target_pose.pose.orientation.x = -vr_subscriber->pose->orientation.x;
+        target_pose.pose.orientation.y = -vr_subscriber->pose->orientation.y;
+        target_pose.pose.orientation.z = -vr_subscriber->pose->orientation.z;
         pose_cmd_pub_->publish(target_pose);
     }
     else

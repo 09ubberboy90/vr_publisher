@@ -43,7 +43,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'robot_type',
-            default_value="ur10",
+            default_value="ur3",
             description='What UR robot to launch'),
         DeclareLaunchArgument(
             'use_fake_hardware',

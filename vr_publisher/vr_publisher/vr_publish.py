@@ -138,6 +138,14 @@ class VrPublisher(Node):
         # self.hmd_pose.orientation = Quaternion()
 
 
+    def convert_quat_to_overhead(self, quat):
+        a = pyq.Quaternion(x = 0.26792267383784046, y = -0.0022442353895080853, z = 0.018259205364723502, w = 0.963264764055318, )
+        b = pyq.Quaternion(x = 0.0,  y = 1.0, z = 0.0, w = 0.0)
+        rel = b * a.inverse
+        return rel * quat
+
+
+
     def extract_pose(self, tracked_device:openvr.TrackedDevicePose_t, name:str) -> Tuple[Pose, Twist]:
         point = Point()
         velocity = Vector3()
@@ -175,10 +183,15 @@ class VrPublisher(Node):
         q1 = pyq.Quaternion(pose[1])
         q1 = q1.normalised
 
-        rot.w = pose[1][0]
-        rot.x = pose[1][1]
-        rot.y = pose[1][2]
-        rot.z = pose[1][3]
+        # rot.w = pose[1][0]
+        # rot.x = pose[1][1]
+        # rot.y = pose[1][2]
+        # rot.z = pose[1][3]
+        new_quat = self.convert_quat_to_overhead(q1)
+        rot.w = new_quat.w
+        rot.x = new_quat.x
+        rot.y = new_quat.y
+        rot.z = new_quat.z
 
         hmd_msg = Pose()
         if name == "hmd":
@@ -234,18 +247,19 @@ class VrPublisher(Node):
             if not controller.bDeviceIsConnected:
                 continue
             if self.system.getTrackedDeviceClass(idx) == 1:
-                self.devices["hmd"] = controller
+                self.devices["hmd"] = (controller, idx)
             elif self.system.getTrackedDeviceClass(idx) == 2 and (self.devices.get("LeftHand",None) is None or self.devices.get("RightHand", None) is None):
                 controller_role = self.system.getControllerRoleForTrackedDeviceIndex(
                     idx)
                 if controller_role == 1:
-                    self.devices["LeftHand"] = controller
+                    self.devices["LeftHand"] = (controller, idx)
                 if controller_role == 2:
-                    self.devices["RightHand"] = controller
+                    self.devices["RightHand"] = (controller, idx)
             elif self.system.getTrackedDeviceClass(idx) == 3:
-                    self.devices[f"Tracker{idx}"]= controller
+                    self.devices[f"Tracker{idx}"]= (controller, idx)
 
-        for idx, (name, el) in enumerate(self.devices.items()):
+
+        for name, (el, idx) in self.devices.items():
             if "Hand" in name:
                 result, pControllerState = self.system.getControllerState(
                     idx)
@@ -263,7 +277,6 @@ class VrPublisher(Node):
             name = f"{name}/pose"
 
             self.publish(name, pose_msg, Pose)
-
             # msg = TwistStamped()
             # msg.header.stamp = self.get_clock().now().to_msg()
             # msg.twist.linear = self.velocity

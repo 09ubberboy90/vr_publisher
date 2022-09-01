@@ -74,10 +74,10 @@ def convert_to_quaternion(pose_mat):
 
 def from_controller_state_to_dict(pControllerState):
     # docs: https://github.com/ValveSoftware/openvr/wiki/IVRSystem::GetControllerState
-    d = {}
-    d['unPacketNum'] = pControllerState.unPacketNum
+    controller_state = {}
+    controller_state['unPacketNum'] = pControllerState.unPacketNum
     # on trigger .y is always 0.0 says the docs
-    d['trigger'] = pControllerState.rAxis[3].x
+    controller_state['trigger'] = pControllerState.rAxis[3].x
     try:    
         print(f"1 : {pControllerState.rAxis0} {pControllerState.rAxis0}")
     except:
@@ -96,25 +96,25 @@ def from_controller_state_to_dict(pControllerState):
         pass
     # 0.0 on trigger is fully released
     # -1.0 to 1.0 on joystick and trackpads
-    d['trackpad_x'] = pControllerState.rAxis[0].x
-    d['trackpad_y'] = pControllerState.rAxis[0].y
+    controller_state['trackpad_x'] = pControllerState.rAxis[0].x
+    controller_state['trackpad_y'] = pControllerState.rAxis[0].y
     # These are published and always 0.0
     # for i in range(2, 5):
-    #     d['unknowns_' + str(i) + '_x'] = pControllerState.rAxis[i].x
-    #     d['unknowns_' + str(i) + '_y'] = pControllerState.rAxis[i].y
-    d['ulButtonPressed'] = pControllerState.ulButtonPressed
-    d['ulButtonTouched'] = pControllerState.ulButtonTouched
+    #     controller_state['unknowns_' + str(i) + '_x'] = pControllerState.rAxis[i].x
+    #     controller_state['unknowns_' + str(i) + '_y'] = pControllerState.rAxis[i].y
+    controller_state['ulButtonPressed'] = pControllerState.ulButtonPressed
+    controller_state['ulButtonTouched'] = pControllerState.ulButtonTouched
     # To make easier to understand what is going on
     # Second bit marks menu button
-    d['menu_button'] = bool(pControllerState.ulButtonPressed >> 1 & 1)
+    controller_state['menu_button'] = bool(pControllerState.ulButtonPressed >> 1 & 1)
     # 32 bit marks trackpad
-    d['trackpad_pressed'] = bool(pControllerState.ulButtonPressed >> 32 & 1)
-    d['trackpad_touched'] = bool(pControllerState.ulButtonTouched >> 32 & 1)
+    controller_state['trackpad_pressed'] = bool(pControllerState.ulButtonPressed >> 32 & 1)
+    controller_state['trackpad_touched'] = bool(pControllerState.ulButtonTouched >> 32 & 1)
     # third bit marks grip button
-    d['grip_button'] = bool(pControllerState.ulButtonPressed >> 2 & 1)
+    controller_state['grip_button'] = bool(pControllerState.ulButtonPressed >> 2 & 1)
     # System button can't be read, if you press it
     # the controllers stop reporting
-    return d
+    return controller_state
 
 
 
@@ -134,14 +134,16 @@ class VrPublisher(Node):
         self.vel = defaultdict(lambda: np.zeros((5,3)))
         self.ang_vel = defaultdict(lambda: np.zeros((5,3)))
         self.hmd_pose = Pose()
+        self.base_pose = pyq.Quaternion()
+        self.controller_state = {}
         # self.hmd_pose.position = Point()
         # self.hmd_pose.orientation = Quaternion()
 
 
     def convert_quat_to_overhead(self, quat):
-        a = pyq.Quaternion(x = 0.26792267383784046, y = -0.0022442353895080853, z = 0.018259205364723502, w = 0.963264764055318, )
-        b = pyq.Quaternion(x = 0.0,  y = 1.0, z = 0.0, w = 0.0)
-        rel = b * a.inverse
+        # a = pyq.Quaternion(x = 0.26792267383784046, y = -0.0022442353895080853, z = 0.018259205364723502, w = 0.963264764055318, )
+        b = pyq.Quaternion(x = -1.0,  y = 0.0, z = 0.0, w = 0.0)
+        rel = b * self.base_pose.inverse
         return rel * quat
 
 
@@ -179,6 +181,8 @@ class VrPublisher(Node):
         # self.point[name] = point
 
         rot = Quaternion()
+        if self.controller_state.get(name, None) is not None and self.controller_state[name]["trackpad_pressed"]:
+            self.base_pose = pyq.Quaternion(pose[1])
 
         q1 = pyq.Quaternion(pose[1])
         q1 = q1.normalised
@@ -187,11 +191,17 @@ class VrPublisher(Node):
         # rot.x = pose[1][1]
         # rot.y = pose[1][2]
         # rot.z = pose[1][3]
+        # 
         new_quat = self.convert_quat_to_overhead(q1)
         rot.w = new_quat.w
-        rot.x = new_quat.x
-        rot.y = new_quat.y
-        rot.z = new_quat.z
+        rot.x = -new_quat.z
+        rot.y = new_quat.x
+        rot.z = new_quat.y
+        
+        # rot.w = q1.w
+        # rot.x = q1.z
+        # rot.y = q1.x
+        # rot.z = q1.y
 
         hmd_msg = Pose()
         if name == "hmd":
@@ -264,11 +274,14 @@ class VrPublisher(Node):
                 result, pControllerState = self.system.getControllerState(
                     idx)
                 if result and name:
-                    d = from_controller_state_to_dict(pControllerState)
+                    self.controller_state[name] = from_controller_state_to_dict(pControllerState)
+                    # if name == "RightHand":
+                    #     print(self.controller_state)
                     tmp_name = f"{name}/trigger"
                     msg = Bool()
-                    msg.data = d["ulButtonPressed"] >= 8589934592 # At least TRigger pressed
+                    msg.data = self.controller_state[name]["ulButtonPressed"] >= 8589934592 # At least TRigger pressed
                     self.publish(tmp_name, msg, Bool)
+
         
         
             pose_msg, vel_msg = self.extract_pose(el, name)

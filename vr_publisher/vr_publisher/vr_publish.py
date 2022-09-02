@@ -134,16 +134,18 @@ class VrPublisher(Node):
         self.vel = defaultdict(lambda: np.zeros((5,3)))
         self.ang_vel = defaultdict(lambda: np.zeros((5,3)))
         self.hmd_pose = Pose()
-        self.base_pose = pyq.Quaternion()
+        self.last_hmd_pose = None
+        self.base_rot = defaultdict(lambda: pyq.Quaternion())
+        self.base_pose = defaultdict(lambda: [0]*3)
         self.controller_state = {}
         # self.hmd_pose.position = Point()
         # self.hmd_pose.orientation = Quaternion()
 
 
-    def convert_quat_to_overhead(self, quat):
+    def convert_quat_to_overhead(self, quat, name):
         # a = pyq.Quaternion(x = 0.26792267383784046, y = -0.0022442353895080853, z = 0.018259205364723502, w = 0.963264764055318, )
         b = pyq.Quaternion(x = -1.0,  y = 0.0, z = 0.0, w = 0.0)
-        rel = b * self.base_pose.inverse
+        rel = b * self.base_rot[name].inverse
         return rel * quat
 
 
@@ -181,8 +183,11 @@ class VrPublisher(Node):
         # self.point[name] = point
 
         rot = Quaternion()
-        if self.controller_state.get(name, None) is not None and self.controller_state[name]["trackpad_pressed"]:
-            self.base_pose = pyq.Quaternion(pose[1])
+        if self.controller_state.get(name, None) is not None:
+            if self.controller_state[name]["trackpad_pressed"]:
+                self.base_rot[name] = pyq.Quaternion(pose[1])
+            if self.controller_state[name]["ulButtonPressed"] == 6:
+                self.base_pose[name] = pose[0]
 
         q1 = pyq.Quaternion(pose[1])
         q1 = q1.normalised
@@ -192,7 +197,7 @@ class VrPublisher(Node):
         # rot.y = pose[1][2]
         # rot.z = pose[1][3]
         # 
-        new_quat = self.convert_quat_to_overhead(q1)
+        new_quat = self.convert_quat_to_overhead(q1, name)
         rot.w = new_quat.w
         rot.x = -new_quat.z
         rot.y = new_quat.x
@@ -202,13 +207,16 @@ class VrPublisher(Node):
         # rot.x = q1.z
         # rot.y = q1.x
         # rot.z = q1.y
-
+        
         hmd_msg = Pose()
         if name == "hmd":
             hmd_msg.orientation = rot
             hmd_msg.position = orig_point
             self.hmd_pose = hmd_msg
 
+        # if (self.controller_state.get(name, None) is not None and self.controller_state[name]["ulButtonPressed"] == 6):
+        #     print("Headset Pose resetted")
+        #     self.hmd_pose = self.last_hmd_pose
         # if self.rot.get(name, None) is not None:
         #     diffQuater = q1 - self.rot[name]
         #     conjBoxQuater = q1.inverse
@@ -258,19 +266,19 @@ class VrPublisher(Node):
                 continue
             if self.system.getTrackedDeviceClass(idx) == 1:
                 self.devices["hmd"] = (controller, idx)
-            elif self.system.getTrackedDeviceClass(idx) == 2 and (self.devices.get("LeftHand",None) is None or self.devices.get("RightHand", None) is None):
+            elif self.system.getTrackedDeviceClass(idx) == 2 and (self.devices.get("left_hand",None) is None or self.devices.get("right_hand", None) is None):
                 controller_role = self.system.getControllerRoleForTrackedDeviceIndex(
                     idx)
                 if controller_role == 1:
-                    self.devices["LeftHand"] = (controller, idx)
+                    self.devices["left_hand"] = (controller, idx)
                 if controller_role == 2:
-                    self.devices["RightHand"] = (controller, idx)
+                    self.devices["right_hand"] = (controller, idx)
             elif self.system.getTrackedDeviceClass(idx) == 3:
-                    self.devices[f"Tracker{idx}"]= (controller, idx)
+                    self.devices[f"tracker_{idx}"]= (controller, idx)
 
 
         for name, (el, idx) in self.devices.items():
-            if "Hand" in name:
+            if "hand" in name:
                 result, pControllerState = self.system.getControllerState(
                     idx)
                 if result and name:

@@ -44,7 +44,7 @@ public:
     MinimalSubscriber()
         : Node("minimal_subscriber")
     {
-        visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("world", "/rviz_visual_markers", this));
+        visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("ground", "/rviz_visual_markers", this));
         visual_tools_->deleteAllMarkers();
 
         std::function<void(const std::shared_ptr<geometry_msgs::msg::Pose>)>
@@ -55,22 +55,22 @@ public:
         std::function<void(const std::shared_ptr<geometry_msgs::msg::Pose>)>
             fcn2 = std::bind(&MinimalSubscriber::topic_callback, this, std::placeholders::_1, "left");
         subscription_left = this->create_subscription<geometry_msgs::msg::Pose>(
-            "/LeftHand/pose", 10, fcn2);
+            "/left_hand/pose", 10, fcn2);
 
         std::function<void(const std::shared_ptr<geometry_msgs::msg::Pose>)>
             fcn3 = std::bind(&MinimalSubscriber::topic_callback, this, std::placeholders::_1, "right");
         subscription_right = this->create_subscription<geometry_msgs::msg::Pose>(
-            "/RightHand/pose", 10, fcn3);
+            "/right_hand/pose", 10, fcn3);
 
         std::function<void(const std::shared_ptr<geometry_msgs::msg::Pose>)>
             fcn4 = std::bind(&MinimalSubscriber::topic_callback, this, std::placeholders::_1, "RTracker");
         subscription_Tright = this->create_subscription<geometry_msgs::msg::Pose>(
-            "/Tracker3/pose", 10, fcn4);
+            "/tracker_3/pose", 10, fcn4);
 
         std::function<void(const std::shared_ptr<geometry_msgs::msg::Pose>)>
             fcn5 = std::bind(&MinimalSubscriber::topic_callback, this, std::placeholders::_1, "LTracker");
         subscription_Tleft = this->create_subscription<geometry_msgs::msg::Pose>(
-            "/Tracker4/pose", 10, fcn5);
+            "/tracker_4/pose", 10, fcn5);
     }
 
 private:
@@ -79,9 +79,9 @@ private:
         auto pose = Eigen::Isometry3d(
             Eigen::Translation3d(msg->position.z, msg->position.x, msg->position.y) *
             Eigen::Quaterniond(msg->orientation.w,
-                               msg->orientation.z,
                                msg->orientation.x,
-                               msg->orientation.y));
+                               msg->orientation.y,
+                               msg->orientation.z));
         
         // Publish arrow vector of pose
         visual_tools_->resetMarkerCounts();

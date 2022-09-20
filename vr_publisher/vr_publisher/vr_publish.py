@@ -52,6 +52,16 @@ def convert_to_euler(pose_mat):
     z = pose_mat[2][3]
     return [[x,y,z],[yaw,pitch,roll]]
 
+
+def convert_to_euler(pose_mat):
+    yaw = 180 / math.pi * math.atan2(pose_mat[1][0], pose_mat[0][0])
+    pitch = 180 / math.pi * math.atan2(pose_mat[2][0], pose_mat[0][0])
+    roll = 180 / math.pi * math.atan2(pose_mat[2][1], pose_mat[2][2])
+    x = pose_mat[0][3]
+    y = pose_mat[1][3]
+    z = pose_mat[2][3]
+    return [yaw,pitch,roll]
+
 def convert_to_quaternion(pose_mat):
     # Per issue #2, adding a abs() so that sqrt only results in real numbers
     # r_w = math.sqrt(abs(1+pose_mat[0][0]+pose_mat[1][1]+pose_mat[2][2]))/2
@@ -122,7 +132,7 @@ class VrPublisher(Node):
 
     def __init__(self, openvr_system:openvr.IVRSystem):
         super().__init__('vr_publisher')
-        timer_period = 0.1
+        timer_period = 0.05
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.devices = {}
         self.system = openvr_system
@@ -138,17 +148,7 @@ class VrPublisher(Node):
         self.base_rot = defaultdict(lambda: pyq.Quaternion())
         self.base_pose = defaultdict(lambda: [0]*3)
         self.controller_state = {}
-        # self.hmd_pose.position = Point()
-        # self.hmd_pose.orientation = Quaternion()
-
-
-    def convert_quat_to_overhead(self, quat, name):
-        # a = pyq.Quaternion(x = 0.26792267383784046, y = -0.0022442353895080853, z = 0.018259205364723502, w = 0.963264764055318, )
-        b = pyq.Quaternion(x = -1.0,  y = 0.0, z = 0.0, w = 0.0)
-        rel = b * self.base_rot[name].inverse
-        return rel * quat
-
-
+        self.offset_rot = pyq.Quaternion(w = 0.0, x = 1.0, y = 0.0, z = 0.0)
 
     def extract_pose(self, tracked_device:openvr.TrackedDevicePose_t, name:str) -> Tuple[Pose, Twist]:
         point = Point()
@@ -190,43 +190,36 @@ class VrPublisher(Node):
                 self.base_pose[name] = pose[0]
 
         q1 = pyq.Quaternion(pose[1])
-        q1 = q1.normalised
 
-        # rot.w = pose[1][0]
-        # rot.x = pose[1][1]
-        # rot.y = pose[1][2]
-        # rot.z = pose[1][3]
-        # 
-        new_quat = self.convert_quat_to_overhead(q1, name)
+        rot.w = pose[1][0]
+        rot.x = pose[1][1]
+        rot.y = pose[1][2]
+        rot.z = pose[1][3]
+
+
+        if name == "right_hand":
+            # print(convert_to_euler(tracked_device.mDeviceToAbsoluteTracking))
+            pose_msg = Pose()
+            pose_msg.orientation = rot
+            pose_msg.position = point
+            self.publish(f"{name}_original", pose_msg, Pose)
+
+        new_quat = self.offset_rot * q1
         rot.w = new_quat.w
-        rot.x = -new_quat.z
-        rot.y = new_quat.x
-        rot.z = new_quat.y
+        rot.x = new_quat.x
+        rot.y = new_quat.y
+        rot.z = new_quat.z
         
         # rot.w = q1.w
-        # rot.x = q1.z
-        # rot.y = q1.x
-        # rot.z = q1.y
+        # rot.x = q1.x
+        # rot.y = q1.y
+        # rot.z = q1.z
         
         hmd_msg = Pose()
         if name == "hmd":
             hmd_msg.orientation = rot
             hmd_msg.position = orig_point
             self.hmd_pose = hmd_msg
-
-        # if (self.controller_state.get(name, None) is not None and self.controller_state[name]["ulButtonPressed"] == 6):
-        #     print("Headset Pose resetted")
-        #     self.hmd_pose = self.last_hmd_pose
-        # if self.rot.get(name, None) is not None:
-        #     diffQuater = q1 - self.rot[name]
-        #     conjBoxQuater = q1.inverse
-        #     time = datetime.now()
-        #     self.prev_time = time
-        #     dtime = (time-self.prev_time).total_seconds()
-        #     velQuater = ((diffQuater * 2.0) / dtime) * conjBoxQuater
-        #     self.ang_velocity.x = velQuater[1]
-        #     self.ang_velocity.y = velQuater[2]
-        #     self.ang_velocity.z = velQuater[3]
 
         self.rot[name] = q1
         pose_msg = Pose()
@@ -240,8 +233,6 @@ class VrPublisher(Node):
         return pose_msg, vel_msg
 
     def timer_callback(self):
-        # poses = []  # Let waitGetPoses populate the poses structure the first time
-        # poses, game_poses = openvr.VRCompositor().waitGetPoses(poses, None)
         self.poses = self.system.getDeviceToAbsoluteTrackingPose(
             openvr.TrackingUniverseStanding, 0, self.poses)
 
@@ -269,13 +260,13 @@ class VrPublisher(Node):
             elif self.system.getTrackedDeviceClass(idx) == 2 and (self.devices.get("left_hand",None) is None or self.devices.get("right_hand", None) is None):
                 controller_role = self.system.getControllerRoleForTrackedDeviceIndex(
                     idx)
+                    
                 if controller_role == 1:
                     self.devices["left_hand"] = (controller, idx)
                 if controller_role == 2:
                     self.devices["right_hand"] = (controller, idx)
             elif self.system.getTrackedDeviceClass(idx) == 3:
                     self.devices[f"tracker_{idx}"]= (controller, idx)
-
 
         for name, (el, idx) in self.devices.items():
             if "hand" in name:
@@ -298,6 +289,7 @@ class VrPublisher(Node):
             name = f"{name}/pose"
 
             self.publish(name, pose_msg, Pose)
+
             # msg = TwistStamped()
             # msg.header.stamp = self.get_clock().now().to_msg()
             # msg.twist.linear = self.velocity

@@ -77,11 +77,11 @@ private:
     void topic_callback(const geometry_msgs::msg::Pose::SharedPtr msg, std::string name)
     {
         auto pose = Eigen::Isometry3d(
-            Eigen::Translation3d(msg->position.z, msg->position.x, msg->position.y) *
-            Eigen::Quaterniond(msg->orientation.w,
+            Eigen::Translation3d(-msg->position.x, msg->position.z, msg->position.y) *
+            Eigen::Quaterniond(-msg->orientation.w,
+                               -msg->orientation.z,
                                msg->orientation.x,
-                               msg->orientation.y,
-                               msg->orientation.z));
+                               -msg->orientation.y));
         
         // Publish arrow vector of pose
         visual_tools_->resetMarkerCounts();
@@ -106,6 +106,7 @@ private:
     rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subscription_right;
     rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subscription_Tleft;
     rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subscription_Tright;
+    rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subscription_Roriginal;
 };
 
 int main(int argc, char **argv)

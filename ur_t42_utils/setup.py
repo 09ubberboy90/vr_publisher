@@ -21,7 +21,6 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "joint_controller = ur_t42_utils.joint_controller:main"
         ],
     },
 )

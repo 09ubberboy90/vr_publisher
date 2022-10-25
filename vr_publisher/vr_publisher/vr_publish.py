@@ -138,7 +138,8 @@ class VrPublisher(Node):
         self.base_rot = defaultdict(lambda: pyq.Quaternion())
         self.base_pose = defaultdict(lambda: [0]*3)
         self.controller_state = {}
-        self.offset_rot = pyq.Quaternion(w = 0.0, x = 1.0, y = 0.0, z = 0.0)
+        self.offset_rot = pyq.Quaternion(w = 0.0, x = -1.0, y = 0.0, z = 0.0)
+        self.tracking_enabled = defaultdict(lambda: True)
 
     def extract_pose(self, tracked_device:openvr.TrackedDevicePose_t, name:str) -> Tuple[Pose, Twist]:
         point = Point()
@@ -264,7 +265,7 @@ class VrPublisher(Node):
                     idx)
                 if result and name:
                     self.controller_state[name] = from_controller_state_to_dict(pControllerState)
-                    # if name == "RightHand":
+                    # if name == "right_hand":
                     #     print(self.controller_state)
                     tmp_name = f"{name}/trigger"
                     msg = Bool()
@@ -275,8 +276,16 @@ class VrPublisher(Node):
         
         
             pose_msg, vel_msg = self.extract_pose(el, name)
-            if self.controller_state[name]["ulButtonPressed"] == 6:
-                pose_msg.position.x = 3001 ## we want to disable tracking if the trackpad is pressed
+
+            if name != "hmd":
+                try:
+                    if self.controller_state[name]["trackpad_pressed"] and not self.controller_state[name+"_prev"]["trackpad_pressed"]:
+                        self.tracking_enabled[name] = not self.tracking_enabled[name]
+                except:
+                    pass
+                self.controller_state[name+"_prev"] = self.controller_state[name]
+            if self.tracking_enabled[name]:
+                pose_msg.position.x = 3001.0 ## we want to disable tracking if the trackpad is pressed
 
             name = f"{name}/pose"
 

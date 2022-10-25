@@ -52,16 +52,6 @@ def convert_to_euler(pose_mat):
     z = pose_mat[2][3]
     return [[x,y,z],[yaw,pitch,roll]]
 
-
-def convert_to_euler(pose_mat):
-    yaw = 180 / math.pi * math.atan2(pose_mat[1][0], pose_mat[0][0])
-    pitch = 180 / math.pi * math.atan2(pose_mat[2][0], pose_mat[0][0])
-    roll = 180 / math.pi * math.atan2(pose_mat[2][1], pose_mat[2][2])
-    x = pose_mat[0][3]
-    y = pose_mat[1][3]
-    z = pose_mat[2][3]
-    return [yaw,pitch,roll]
-
 def convert_to_quaternion(pose_mat):
     # Per issue #2, adding a abs() so that sqrt only results in real numbers
     # r_w = math.sqrt(abs(1+pose_mat[0][0]+pose_mat[1][1]+pose_mat[2][2]))/2
@@ -280,23 +270,17 @@ class VrPublisher(Node):
                     msg = Bool()
                     msg.data = self.controller_state[name]["ulButtonPressed"] >= 8589934592 # At least TRigger pressed
                     self.publish(tmp_name, msg, Bool)
+                    
 
         
         
             pose_msg, vel_msg = self.extract_pose(el, name)
-
+            if self.controller_state[name]["ulButtonPressed"] == 6:
+                pose_msg.position.x = 3001 ## we want to disable tracking if the trackpad is pressed
 
             name = f"{name}/pose"
 
             self.publish(name, pose_msg, Pose)
-
-            # msg = TwistStamped()
-            # msg.header.stamp = self.get_clock().now().to_msg()
-            # msg.twist.linear = self.velocity
-            # msg.twist.angular = self.ang_velocity
-
-            # name += "/vel"
-            # self.publish(name, msg, TwistStamped)
 
             name = name.replace("pose", "vel")
             self.publish(name, vel_msg, Twist)

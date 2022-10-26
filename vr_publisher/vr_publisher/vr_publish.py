@@ -135,10 +135,7 @@ class VrPublisher(Node):
         self.ang_vel = defaultdict(lambda: np.zeros((5,3)))
         self.hmd_pose = Pose()
         self.last_hmd_pose = None
-        self.base_rot = defaultdict(lambda: pyq.Quaternion())
-        self.base_pose = defaultdict(lambda: [0]*3)
         self.controller_state = {}
-        self.offset_rot = pyq.Quaternion(w = 0.0, x = -1.0, y = 0.0, z = 0.0)
         self.tracking_enabled = defaultdict(lambda: True)
 
     def extract_pose(self, tracked_device:openvr.TrackedDevicePose_t, name:str) -> Tuple[Pose, Twist]:
@@ -162,49 +159,22 @@ class VrPublisher(Node):
         self.ang_vel[name][-1] = [round(num,2) for num in tracked_device.vAngularVelocity[0:3]]
         mean = np.mean(self.vel[name],0)
         ang_mean = np.mean(self.ang_vel[name],0)
-        # velocity.x = round(mean[2],2)+0.0
-        # velocity.y = round(mean[1],2)+0.0
-        # velocity.z = round(mean[0],2)+0.0
-        velocity.x = -mean[2] + 0.0
-        velocity.y = mean[1] + 0.0
-        velocity.z = -mean[1] + 0.0
-        ang_velocity.x = ang_mean[2] + 0.0
-        ang_velocity.y = ang_mean[1] + 0.0
-        ang_velocity.z = ang_mean[0] + 0.0
-        # self.point[name] = point
+        velocity.x = -mean[2]
+        velocity.y = mean[1] 
+        velocity.z = -mean[0] 
+        ang_velocity.x = ang_mean[2] 
+        ang_velocity.y = ang_mean[1] 
+        ang_velocity.z = ang_mean[0] 
 
         rot = Quaternion()
-        if self.controller_state.get(name, None) is not None:
-            if self.controller_state[name]["trackpad_pressed"]:
-                self.base_rot[name] = pyq.Quaternion(pose[1])
-            if self.controller_state[name]["ulButtonPressed"] == 6:
-                self.base_pose[name] = pose[0]
 
         q1 = pyq.Quaternion(pose[1])
 
-        rot.w = pose[1][0]
-        rot.x = pose[1][1]
-        rot.y = pose[1][2]
-        rot.z = pose[1][3]
 
-
-        if name == "right_hand":
-            # print(convert_to_euler(tracked_device.mDeviceToAbsoluteTracking))
-            pose_msg = Pose()
-            pose_msg.orientation = rot
-            pose_msg.position = point
-            self.publish(f"{name}_original", pose_msg, Pose)
-
-        new_quat = self.offset_rot * q1
-        rot.w = new_quat.w
-        rot.x = new_quat.x
-        rot.y = new_quat.y
-        rot.z = new_quat.z
-        
-        # rot.w = q1.w
-        # rot.x = q1.x
-        # rot.y = q1.y
-        # rot.z = q1.z
+        rot.w = q1.w
+        rot.x = q1.x
+        rot.y = q1.y
+        rot.z = q1.z
         
         hmd_msg = Pose()
         if name == "hmd":
@@ -284,7 +254,7 @@ class VrPublisher(Node):
                 except:
                     pass
                 self.controller_state[name+"_prev"] = self.controller_state[name]
-            if self.tracking_enabled[name]:
+            if not self.tracking_enabled[name]:
                 pose_msg.position.x = 3001.0 ## we want to disable tracking if the trackpad is pressed
 
             name = f"{name}/pose"

@@ -27,21 +27,22 @@
 #CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 #OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# https: // gist.github.com/awesomebytes/75daab3adb62b331f21ecf3a03b3ab46
+import math
+import sys
+from collections import defaultdict
+from datetime import datetime
 from typing import Tuple
 
-import sys
-from datetime import datetime
+import numpy as np
 import openvr
 import pyquaternion as pyq
 import rclpy
+from geometry_msgs.msg import (Point, Pose, Quaternion, Twist, TwistStamped,
+                               Vector3)
 from rclpy.node import Node
-from geometry_msgs.msg import Pose, Point, Quaternion, Twist, TwistStamped, Vector3
 from std_msgs.msg import Bool
-from collections import defaultdict
-import numpy as np
 
-# https: // gist.github.com/awesomebytes/75daab3adb62b331f21ecf3a03b3ab46
-import math
 
 def convert_to_euler(pose_mat):
     yaw = 180 / math.pi * math.atan2(pose_mat[1][0], pose_mat[0][0])

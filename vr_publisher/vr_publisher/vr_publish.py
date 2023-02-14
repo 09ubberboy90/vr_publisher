@@ -196,6 +196,7 @@ class VrPublisher(Node):
         if name == "hmd":
             self.hmd_pose = hmd_msg
             hmd_msg.orientation = rot
+            orig_point.y += .25
             hmd_msg.position = orig_point
 
         pose_msg = Pose()

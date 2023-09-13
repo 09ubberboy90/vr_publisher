@@ -2,7 +2,7 @@
 
 Getting the 3D position and rotation of any connected controller to SteamVR and publishes to ROS2.
 
-Part of the telesim_pnp packages suite available here for the master or here for just the UR3/T42 part.
+Part of the telesim_pnp packages suite available [here](https://github.com/09ubberboy90/telesim_pnp.git).
 
 ## How to run
 
